@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.eclipse.pass</groupId>
+    <artifactId>eclipse-pass-parent</artifactId>
+    <version>0.1.0</version>
+  </parent>
+
+  <groupId>org.eclipse.pass</groupId>
+  <artifactId>pass-data-migration</artifactId>
+  <packaging>pom</packaging>
+  <version>0.2.0-SNAPSHOT</version>
+
+  <name>Eclipse-PASS Data Migration Tool</name>
+  <description>Tool for Migration PASS Date</description>
+  <url>https://github.com/eclipse-pass/pass-data-migration</url>
+  <licenses>
+    <license>
+      <name>The Apache License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <name>Jim Martino</name>
+      <email>jrm@jhu.edu</email>
+      <organization>The Sheridan Libraries, Johns Hopkins University</organization>
+      <organizationUrl>https://www.library.jhu.edu/</organizationUrl>
+    </developer>
+  </developers>
+
+  <modules>
+    <module>pass-data-migration-cli</module>
+    <module>pass-data-migration-integration</module>
+    <module>pass-data-migration-types</module>
+  </modules>
+
+  <scm>
+    <connection>scm:git:git://github.com/eclipse-pass/pass-data-migration.git</connection>
+    <developerConnection>scm:git:ssh://github.com:eclipse-pass/pass-data-migration.git</developerConnection>
+    <url>http://github.com/eclipse-pass/pass-data-migration/tree/main/</url>
+    <tag>HEAD</tag>
+  </scm>
+
+  <properties>
+    <maven.compiler.source>11</maven.compiler.source>
+    <maven.compiler.target>11</maven.compiler.target>
+    <args4.version>2.33</args4.version>
+    <json-simple.version>1.1.1</json-simple.version>
+    <slf4j.version>1.7.36</slf4j.version>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>args4j</groupId>
+        <artifactId>args4j</artifactId>
+        <version>${args4.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.pass</groupId>
+        <artifactId>pass-data-migration-types</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.googlecode.json-simple</groupId>
+        <artifactId>json-simple</artifactId>
+        <version>${json-simple.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <repositories>
+    <repository>
+      <id>sonatype-nexus-snapshots</id>
+      <name>Sonatype Nexus Snapshots</name>
+      <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
+
+  <build>
+  </build>
+
+  <profiles>
+
+    <profile>
+      <id>external</id>
+      <activation>
+        <property>
+          <name>external</name>
+        </property>
+      </activation>
+      <properties>
+        <scp.port>122</scp.port>
+      </properties>
+    </profile>
+
+  </profiles>
+</project>

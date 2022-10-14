@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<checkstyle version="8.41.1">
+<file name="/home/jrm/IdeaProjects/new/pass-data-migration/pass-data-migration-types/src/main/java/org/eclipse/pass/data/migration/types/JournalEntityType.java">
+</file>
+<file name="/home/jrm/IdeaProjects/new/pass-data-migration/pass-data-migration-types/src/main/java/org/eclipse/pass/data/migration/types/EntityType.java">
+</file>
+<file name="/home/jrm/IdeaProjects/new/pass-data-migration/pass-data-migration-types/src/main/java/org/eclipse/pass/data/migration/types/PublicationEntityType.java">
+</file>
+<file name="/home/jrm/IdeaProjects/new/pass-data-migration/pass-data-migration-types/src/main/java/org/eclipse/pass/data/migration/types/RepositoryEntityType.java">
+</file>
+<file name="/home/jrm/IdeaProjects/new/pass-data-migration/pass-data-migration-types/src/main/java/org/eclipse/pass/data/migration/types/SubmissionEntityType.java">
+</file>
+<file name="/home/jrm/IdeaProjects/new/pass-data-migration/pass-data-migration-types/src/main/java/org/eclipse/pass/data/migration/types/DepositEntityType.java">
+</file>
+<file name="/home/jrm/IdeaProjects/new/pass-data-migration/pass-data-migration-types/src/main/java/org/eclipse/pass/data/migration/types/SubmissionEventEntityType.java">
+</file>
+<file name="/home/jrm/IdeaProjects/new/pass-data-migration/pass-data-migration-types/src/main/java/org/eclipse/pass/data/migration/types/FunderEntityType.java">
+</file>
+<file name="/home/jrm/IdeaProjects/new/pass-data-migration/pass-data-migration-types/src/main/java/org/eclipse/pass/data/migration/types/FileEntityType.java">
+</file>
+<file name="/home/jrm/IdeaProjects/new/pass-data-migration/pass-data-migration-types/src/main/java/org/eclipse/pass/data/migration/types/UserEntityType.java">
+</file>
+<file name="/home/jrm/IdeaProjects/new/pass-data-migration/pass-data-migration-types/src/main/java/org/eclipse/pass/data/migration/types/PolicyEntityType.java">
+</file>
+<file name="/home/jrm/IdeaProjects/new/pass-data-migration/pass-data-migration-types/src/main/java/org/eclipse/pass/data/migration/types/RepositoryCopyEntityType.java">
+</file>
+<file name="/home/jrm/IdeaProjects/new/pass-data-migration/pass-data-migration-types/src/main/java/org/eclipse/pass/data/migration/types/GrantEntityType.java">
+</file>
+</checkstyle>
