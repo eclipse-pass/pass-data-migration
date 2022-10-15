@@ -17,7 +17,7 @@
  *
  */
 
-package org.eclipse.pass.data.migration.types;
+package org.eclipse.pass.data.migration.cli.types;
 
 public class SubmissionEventEntityType extends EntityType {
 

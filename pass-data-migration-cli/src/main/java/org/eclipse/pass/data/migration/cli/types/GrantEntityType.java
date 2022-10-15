@@ -17,12 +17,12 @@
  *
  */
 
-package org.eclipse.pass.data.migration.types;
+package org.eclipse.pass.data.migration.cli.types;
 
-public class PublicationEntityType extends EntityType {
+public class GrantEntityType extends EntityType {
 
-    public PublicationEntityType() {
-        this.endpointName = "publications";
-        this.typeName = "Publication";
+    public GrantEntityType() {
+        this.endpointName = "grants";
+        this.typeName = "Grant";
     }
 }

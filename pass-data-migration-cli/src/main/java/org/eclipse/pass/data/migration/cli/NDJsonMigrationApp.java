@@ -30,19 +30,19 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 
-import org.eclipse.pass.data.migration.types.DepositEntityType;
-import org.eclipse.pass.data.migration.types.EntityType;
-import org.eclipse.pass.data.migration.types.FileEntityType;
-import org.eclipse.pass.data.migration.types.FunderEntityType;
-import org.eclipse.pass.data.migration.types.GrantEntityType;
-import org.eclipse.pass.data.migration.types.JournalEntityType;
-import org.eclipse.pass.data.migration.types.PolicyEntityType;
-import org.eclipse.pass.data.migration.types.PublicationEntityType;
-import org.eclipse.pass.data.migration.types.RepositoryCopyEntityType;
-import org.eclipse.pass.data.migration.types.RepositoryEntityType;
-import org.eclipse.pass.data.migration.types.SubmissionEntityType;
-import org.eclipse.pass.data.migration.types.SubmissionEventEntityType;
-import org.eclipse.pass.data.migration.types.UserEntityType;
+import org.eclipse.pass.data.migration.cli.types.DepositEntityType;
+import org.eclipse.pass.data.migration.cli.types.EntityType;
+import org.eclipse.pass.data.migration.cli.types.FileEntityType;
+import org.eclipse.pass.data.migration.cli.types.FunderEntityType;
+import org.eclipse.pass.data.migration.cli.types.GrantEntityType;
+import org.eclipse.pass.data.migration.cli.types.JournalEntityType;
+import org.eclipse.pass.data.migration.cli.types.PolicyEntityType;
+import org.eclipse.pass.data.migration.cli.types.PublicationEntityType;
+import org.eclipse.pass.data.migration.cli.types.RepositoryCopyEntityType;
+import org.eclipse.pass.data.migration.cli.types.RepositoryEntityType;
+import org.eclipse.pass.data.migration.cli.types.SubmissionEntityType;
+import org.eclipse.pass.data.migration.cli.types.SubmissionEventEntityType;
+import org.eclipse.pass.data.migration.cli.types.UserEntityType;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -123,6 +123,7 @@ public class NDJsonMigrationApp {
 
                     //process transformed JSON object
                     System.out.println(jsonObject.toString());
+
                 }
             }
             reader.close();
@@ -152,7 +153,7 @@ public class NDJsonMigrationApp {
         //This is necessary to increment the correct counter when minting new ids,
         //as each EntityType maintains its own counter
 
-        //First the objects as they will appear as tye Type of the JSON line
+        //First the objects as they will appear as the Type of the JSON line
         stringTypeMap.put(depositEntityType.getTypeName(), depositEntityType);
         stringTypeMap.put(fileEntityType.getTypeName(), fileEntityType);
         stringTypeMap.put(funderEntityType.getTypeName(), funderEntityType);
@@ -166,7 +167,7 @@ public class NDJsonMigrationApp {
         stringTypeMap.put(submissionEventEntityType.getTypeName(), submissionEventEntityType);
         stringTypeMap.put(userEntityType.getTypeName(), userEntityType);
 
-        //these are names as they appear as sub-elements of the JSON object
+        //these are names as they appear as element keys on the JSON object
         stringTypeMap.put("directFunder", funderEntityType);
         stringTypeMap.put("primaryFunder", funderEntityType);
         stringTypeMap.put("journal", journalEntityType);
@@ -187,7 +188,7 @@ public class NDJsonMigrationApp {
             }
         }
 
-        //now process plural subelement entries
+        //now process plural element entries
         //replace Fedora URIs with integer values to store in db
         //associate JSON list key names to the EntityType for that key's values
         Map<String, EntityType> listTypeMap = new HashMap<>();

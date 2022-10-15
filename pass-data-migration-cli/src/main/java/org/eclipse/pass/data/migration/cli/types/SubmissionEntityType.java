@@ -17,12 +17,12 @@
  *
  */
 
-package org.eclipse.pass.data.migration.types;
+package org.eclipse.pass.data.migration.cli.types;
 
-public class PolicyEntityType extends EntityType {
+public class SubmissionEntityType extends EntityType {
 
-    public PolicyEntityType() {
-        this.endpointName = "policies";
-        this.typeName = "Policy";
+    public SubmissionEntityType() {
+        this.endpointName = "submissions";
+        this.typeName = "Submission";
     }
 }

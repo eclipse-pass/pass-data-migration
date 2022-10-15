@@ -17,12 +17,12 @@
  *
  */
 
-package org.eclipse.pass.data.migration.types;
+package org.eclipse.pass.data.migration.cli.types;
 
-public class DepositEntityType extends EntityType {
+public class RepositoryEntityType extends EntityType {
 
-    public DepositEntityType() {
-        this.endpointName = "deposits";
-        this.typeName = "Deposit";
+    public RepositoryEntityType() {
+        this.endpointName = "repositories";
+        this.typeName = "Repository";
     }
 }
