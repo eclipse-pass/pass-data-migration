@@ -138,7 +138,7 @@ public class NDJsonMigrationApp {
      * @param object - the JSON object needing transformation
      * @return the transformed object
      */
-    @SuppressWarnings("checkstyle:Indentation")
+
     private JSONObject transformObject(JSONObject object) {
 
         //the PASS Entity Type this object represents
