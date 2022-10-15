@@ -39,19 +39,19 @@ public class NDJsonDataMigrationCli {
      * Request for help/usage documentation
      */
     @Option(name = "-h", aliases = {"-help", "--help"}, usage = "print help message")
-    private boolean help = false;
+    private final boolean help = false;
 
     /**
      * Requests the current version number of the cli application.
      */
     @Option(name = "-v", aliases = {"-version", "--version"}, usage = "print version information")
-    private boolean version = false;
+    private final boolean version = false;
 
     /**
      * The command line arguments consisting of the data file path
      */
     @Argument
-    private static List<String> arguments = new ArrayList<>();
+    private static final List<String> arguments = new ArrayList<>();
 
     /**
      * The main method which parses the command line arguments and options; also reports errors and exit statuses

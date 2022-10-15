@@ -122,7 +122,7 @@ public class NDJsonMigrationApp {
                     JSONObject transformedObject = transformObject(jsonObject);
 
                     //process transformed JSON object
-                    System.out.println(jsonObject.toString());
+                    System.out.println(jsonObject);
 
                 }
             }
