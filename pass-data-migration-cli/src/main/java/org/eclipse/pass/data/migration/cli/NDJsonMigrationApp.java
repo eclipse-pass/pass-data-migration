@@ -101,14 +101,7 @@ class NDJsonMigrationApp {
                     JsonReader returnedReader = Json.createReader(new StringReader(returned));
                     JsonObject returnedObject = returnedReader.readObject();
                     JsonObject data = (JsonObject) returnedObject.get("data");
-                    try {
-                        JsonUtility.setNewId(jsonObject.get("id"), data.get("id"));
-                    } catch (Exception e) {
-                        JsonObjectBuilder builder = Json.createObjectBuilder();
-                        builder.add(jsonObject.get("id").toString(), "30418");
-                        JsonObject tmp = builder.build();
-                        JsonUtility.setNewId(jsonObject.get("id"), tmp.get(jsonObject.get("id")));
-                    }
+                    JsonUtility.setNewId(jsonObject.get("id"), data.get("id"));
                     returnedReader.close();
                 }
             }
