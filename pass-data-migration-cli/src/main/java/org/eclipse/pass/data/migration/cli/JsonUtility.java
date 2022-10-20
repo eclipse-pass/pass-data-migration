@@ -40,7 +40,7 @@ public class JsonUtility {
         "submission", "submitter", "uri"};
 
     //These are PASS entity fields whose values are lists of fedora URIs
-    static String[] fedoraArrayTypes = {"coPis", "repositories", "effectivePolicies","grants", "submissions"};
+    static String[] fedoraUriArrayTypes = {"coPis", "repositories", "effectivePolicies", "grants", "submissions"};
 
     // a map to keep track of new ids we have minted, regardless of type
     static Map<JsonValue, JsonValue> idMap = new HashMap<>();
@@ -61,6 +61,7 @@ public class JsonUtility {
      */
     static JsonObject transformObject(JsonObject object) {
 
+        //a Map to associate element names to their entity type
         Map<String, String> stringTypeMap = new HashMap<>();
         stringTypeMap.put("directFunder", "funder");
         stringTypeMap.put("primaryFunder", "funder");
@@ -69,31 +70,33 @@ public class JsonUtility {
         stringTypeMap.put("performedBy", "user");
         stringTypeMap.put("policy", "policy");
         stringTypeMap.put("publication", "publication");
-        stringTypeMap.put("repository", "repositoryCopy");
+        stringTypeMap.put("repository", "repository");
+        stringTypeMap.put("repositoryCopy", "repositoryCopy");
+        stringTypeMap.put("submission", "submission");
         stringTypeMap.put("submitter", "user");
 
+        //and for plural elements
         Map<String, String> arrayTypeMap = new HashMap<>();
-
         arrayTypeMap.put("coPis", "user");
         arrayTypeMap.put("repositories", "repository");
         arrayTypeMap.put("effectivePolicies", "policy");
         arrayTypeMap.put("grants", "grant");
+        arrayTypeMap.put("submissions", "submission");
 
         //the PASS Entity Type this object represents
         String entityType = jsonValueString(object, "type");
         JsonObjectBuilder job = Json.createObjectBuilder(object);
-        //object.forEach((key1, value1) -> job.add(key1, value1));
 
-        //enty is using names starting with lower case
+        //Elide is using types starting with lower case
         job.remove("type");
         job.add("type", lowerCaseFirstCharacter(entityType));
 
-        //remove id so that back end will assign one
+        //remove id so that backend will assign a new one
         if (object.containsKey("id")) {
             job.remove("id");
         }
 
-        //assign relationships with new id mapped from old fedora id to new elide id
+        //assign relationships with new id mapped from old fedora ids to new Elide ids
         JsonObjectBuilder relationshipsBuilder = Json.createObjectBuilder();
 
         //first handle the simple fields
@@ -111,11 +114,8 @@ public class JsonUtility {
             }
         }
 
-        //refs to schemas have oa-pass namespaces in urls - replace with eclipse-pass? no type needed
-        //some contexts have op-pass namespace in urls - replace with eclipse-pass? no type needed
-        //update all contexts to 3.5?
-        //depositStatusRef has a http://pass.local:8081/swordv2... endpoint specified - will this change?
-        for (String key : fedoraArrayTypes) {
+        //and now the plural fields
+        for (String key : fedoraUriArrayTypes) {
             JsonObjectBuilder elementBuilder = Json.createObjectBuilder();
             if (object.containsKey(key)) {
                 job.remove(key);
@@ -128,13 +128,15 @@ public class JsonUtility {
                     dataArrayBuilder.add(dataArrayBuilder.build());
                 }
                 elementBuilder.add("data", dataArrayBuilder.build());
-                relationshipsBuilder.add("relationships", elementBuilder.build());
+                relationshipsBuilder.add( key, elementBuilder.build());
                 relationships = true;
             }
         }
+
         if (relationships) {
             job.add("relationships", relationshipsBuilder.build());
         }
+
         return job.build();
     }
 
