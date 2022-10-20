@@ -19,8 +19,6 @@
 
 package org.eclipse.pass.data.migration.cli;
 
-import static java.lang.String.format;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,7 +27,10 @@ import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 
-public class NDJsonDataMigrationCli {
+/**
+ * The command line interface
+ */
+class NDJsonDataMigrationCli {
 
     /*
      * General Options
@@ -39,19 +40,19 @@ public class NDJsonDataMigrationCli {
      * Request for help/usage documentation
      */
     @Option(name = "-h", aliases = {"-help", "--help"}, usage = "print help message")
-    private final boolean help = false;
+    private boolean help = false;
 
     /**
      * Requests the current version number of the cli application.
      */
     @Option(name = "-v", aliases = {"-version", "--version"}, usage = "print version information")
-    private final boolean version = false;
+    private boolean version = false;
 
     /**
      * The command line arguments consisting of the data file path
      */
     @Argument
-    private static final List<String> arguments = new ArrayList<>();
+    private static List<String> arguments = new ArrayList<>();
 
     /**
      * The main method which parses the command line arguments and options; also reports errors and exit statuses
@@ -80,7 +81,7 @@ public class NDJsonDataMigrationCli {
             if (arguments.size() > 0) {
                 dataFileName = arguments.get(0);
             } else {
-                System.err.println(format("Action %s requires a command line argument speciying the data file path"));
+                System.err.println("Application requires a command line argument specifying the data file path");
                 System.exit(1);
             }
 
