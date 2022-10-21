@@ -80,19 +80,15 @@ class NDJsonMigrationApp {
                 if (jsonObject.containsKey("type") &&
                     JsonUtility.jsonValueString(jsonObject,"type").equals(typeName)) {
 
-                    //replace any fedora id values that need it, and form relationships element
+                    //replace any fedora id values that need it, form relationships element,
+                    //and put other elements on an attributes object
                     LOG.debug("Transforming " +  JsonUtility.jsonValueString(jsonObject,"id")
                         + " with type " +  typeName);
                     JsonObject transformedObject = JsonUtility.transformObject(jsonObject);
 
-                    //place all json elements on "attributes" except type, id and relationships
-                    LOG.debug("Attribeautifying " +  JsonUtility.jsonValueString(jsonObject,"id")
-                             + " with type " +  typeName);
-                    JsonObject attributedObject = JsonUtility.attribeautifyJsonObject(transformedObject);
-
                     //prepare this object for Elide
                     JsonObjectBuilder job = Json.createObjectBuilder();
-                    job.add("data", attributedObject);
+                    job.add("data", transformedObject);
                     String pushedObject = String.valueOf(job.build());
 
                     assert elideConnector != null;

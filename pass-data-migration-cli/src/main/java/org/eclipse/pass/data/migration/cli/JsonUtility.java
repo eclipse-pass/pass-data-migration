@@ -52,15 +52,24 @@ public class JsonUtility {
     }
 
     /**
-     * This method takes a JSON object and replaces any values which need adjusting. For example,
-     * any reference to a Fedora URI is replaced by an integer which is incremented on the EntityType
-     * corresponding to the object's type.
+     * This method collects all transformation methods
      *
      * @param object - the JSON object needing transformation
      * @return the transformed object
      */
     static JsonObject transformObject(JsonObject object) {
+        JsonObject transformed = transformFedoraUris( object );
+        return attribeautifyJsonObject((transformed));
+    }
 
+    /**
+     * A method to handle fedora uris needing replacement. these uria are replaced, and
+     * put on a relationships object where appropriate
+     *
+     * @param object the json object needing transformation
+     * @return the transformed object
+     */
+    private static JsonObject transformFedoraUris( JsonObject object ) {
         //a Map to associate element names to their entity type
         Map<String, String> stringTypeMap = new HashMap<>();
         stringTypeMap.put("directFunder", "funder");
@@ -83,11 +92,12 @@ public class JsonUtility {
         arrayTypeMap.put("grants", "grant");
         arrayTypeMap.put("submissions", "submission");
 
-        //the PASS Entity Type this object represents
-        String entityType = jsonValueString(object, "type");
+        //build a copy of the object to transform
         JsonObjectBuilder job = Json.createObjectBuilder(object);
 
+        //the PASS Entity Type this object represents is upper-cased.
         //Elide is using types starting with lower case
+        String entityType = jsonValueString(object, "type");
         job.remove("type");
         job.add("type", lowerCaseFirstCharacter(entityType));
 
@@ -97,6 +107,7 @@ public class JsonUtility {
         }
 
         //assign relationships with new id mapped from old fedora ids to new Elide ids
+        //we will move these data elements to the relationships object
         JsonObjectBuilder relationshipsBuilder = Json.createObjectBuilder();
 
         //first handle the simple fields
