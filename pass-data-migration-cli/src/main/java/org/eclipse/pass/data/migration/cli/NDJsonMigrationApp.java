@@ -45,7 +45,8 @@ class NDJsonMigrationApp {
     // array of "primary" types, in the order in which they need to be processed
     //to guarantee that referred-to objects have already been created
     String[] types = {"User", "Journal", "Publication", "Repository",
-                      "Policy", "Funder", "Grant", "Submission"};
+                      "Policy", "Funder", "Grant", "Submission", "SubmissionEvent", "RepositoryCopy",
+                      "Deposit", "File"};
 
     // path to the NDJSON data file
     String jsonFileName;
@@ -56,7 +57,7 @@ class NDJsonMigrationApp {
 
     public void run() throws Exception {
 
-        String applicationPropertiesFileName = "migration.properties";
+        String applicationPropertiesFileName = ".env";
         File applicationProperties = new File(applicationPropertiesFileName);
         ElideConnector elideConnector;
 
@@ -82,8 +83,6 @@ class NDJsonMigrationApp {
 
                     //replace any fedora id values that need it, form relationships element,
                     //and put other elements on an attributes object
-                    LOG.debug("Transforming " +  JsonUtility.jsonValueString(jsonObject,"id")
-                        + " with type " +  typeName);
                     JsonObject transformedObject = JsonUtility.transformObject(jsonObject);
 
                     //prepare this object for Elide
@@ -97,12 +96,20 @@ class NDJsonMigrationApp {
                     JsonReader returnedReader = Json.createReader(new StringReader(returned));
                     JsonObject returnedObject = returnedReader.readObject();
                     JsonObject data = (JsonObject) returnedObject.get("data");
-                    JsonUtility.setNewId(jsonObject.get("id"), data.get("id"));
+                    try {
+                        JsonUtility.setNewId(jsonObject.get("id"), data.get("id"));
+                    } catch (Exception e) {
+                        String message = "Setting id failed. Either map does not contain replacement," +
+                                         " or return of object" + " from target failed. \n Original object:\n" +
+                                         jsonObject + "\n" + "Pushed object" + pushedObject + "\n";
+                        processException(message, e);
+                    }
                     returnedReader.close();
                 }
             }
             reader.close();
         }
+        System.out.println(JsonUtility.idMap.size() + " objects created");
     }
 
     /**

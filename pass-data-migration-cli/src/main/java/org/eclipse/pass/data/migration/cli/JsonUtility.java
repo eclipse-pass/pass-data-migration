@@ -35,12 +35,12 @@ import javax.json.JsonValue;
 public class JsonUtility {
 
     //This array contains the field names on PASS entities which have a fedora URI as a value
-    static String[] fedoraUriTypes = {"directFunder ", "primaryFunder", "journal", "pi", "performedBy",
+    static String[] fedoraUriTypes = {"directFunder", "primaryFunder", "journal", "pi", "performedBy",
         "policy", "publication", "repository", "repositoryCopy",
         "submission", "submitter", "uri"};
 
     //These are PASS entity fields whose values are lists of fedora URIs
-    static String[] fedoraUriArrayTypes = {"coPis", "repositories", "effectivePolicies", "grants", "submissions"};
+    static String[] fedoraUriArrayTypes = {"coPis", "repositories", "effectivePolicies", "grants", "submissions" };
 
     // a map to keep track of new ids we have minted, regardless of type
     static Map<JsonValue, JsonValue> idMap = new HashMap<>();
@@ -114,7 +114,7 @@ public class JsonUtility {
         boolean relationships = false;
         for (String key : fedoraUriTypes) {
             JsonObjectBuilder elementBuilder = Json.createObjectBuilder();
-            if (object.containsKey(key)) {
+            if (object.containsKey(key) && !key.equals("uri")) { //uri attribute cannot migrate
                 job.remove(key);
                 JsonObjectBuilder dataElementBuilder = Json.createObjectBuilder();
                 dataElementBuilder.add("id",  getNewId(object.get(key)));
@@ -136,7 +136,7 @@ public class JsonUtility {
                     JsonObjectBuilder dataElementBuilder = Json.createObjectBuilder();
                     dataElementBuilder.add("id", getNewId(value));
                     dataElementBuilder.add("type", arrayTypeMap.get(key));
-                    dataArrayBuilder.add(dataArrayBuilder.build());
+                    dataArrayBuilder.add(dataElementBuilder.build());
                 }
                 elementBuilder.add("data", dataArrayBuilder.build());
                 relationshipsBuilder.add( key, elementBuilder.build());
@@ -153,7 +153,8 @@ public class JsonUtility {
 
     /**
      * This method takes a "transformed" JSON object and sticks fields which are not either id or
-     * type or relationships into an attributes JSON object - we also suppress the context field
+     * type nor relationships into an attributes JSON object - we also suppress the context
+     * and links fields
      * @param jsonObject - the supplied JsonObject
      * @return the attribeautifeid JsonObject
      */
@@ -166,7 +167,7 @@ public class JsonUtility {
             String keyString = key.toString();
             if (keyString.equals("id") || keyString.equals("type") || keyString.equals("relationships")) {
                 job.add(keyString,  jsonObject.get(keyString));
-            } else if (!keyString.equals("context")) {
+            } else if (!keyString.equals("context") && (!keyString.equals("links"))) {
                 attributes.add(keyString, jsonObject.get(keyString));
                 haveAttributes = true;
             }
