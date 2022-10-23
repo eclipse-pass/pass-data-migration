@@ -32,7 +32,7 @@ import javax.json.JsonValue;
 /**
  * This class handles the transformation of incoming NDJson data to make it palatable to the Elide API.
  */
-public class JsonUtility {
+final class JsonUtility {
 
     //This array contains the field names on PASS entities which have a fedora URI as a value
     static String[] fedoraUriTypes = {"directFunder", "primaryFunder", "journal", "pi", "performedBy",
@@ -45,52 +45,49 @@ public class JsonUtility {
     // a map to keep track of new ids we have minted, regardless of type
     static Map<JsonValue, JsonValue> idMap = new HashMap<>();
 
+
+    //a Map to associate element names to their entity type
+    static Map<String, String> stringTypeMap = new HashMap<>();
+    //and for plural elements
+    static Map<String, String> arrayTypeMap = new HashMap<>();
+
+    static boolean initialized = false;
+
     /**
-     * A null constructor for this utility class
+     * A null constructor for this utility class, because security
      */
     private void JavaUtility() {
+        //never called
     }
 
     /**
-     * This method collects all transformation methods
+     * This method orchestrates all transformation methods and wraps it in data object, then
+     * sends the representing string for submission via the ElideConnector
      *
      * @param object - the JSON object needing transformation
-     * @return the transformed object
+     * @return the transformed object's string representation
      */
-    static JsonObject transformObject(JsonObject object) {
+    static String transformObject(JsonObject object) {
+        //initialize our string arrays once
+        if (!initialized) {
+            initializeArrays();
+            initialized = true;
+        }
+
         JsonObject transformed = transformFedoraUris( object );
-        return attribeautifyJsonObject((transformed));
+        JsonObject attribeautified = attribeautifyJsonObject(transformed);
+        return wrapObject( attribeautified);
     }
 
     /**
-     * A method to handle fedora uris needing replacement. these uria are replaced, and
-     * put on a relationships object where appropriate
+     * A method to handle fedora uris needing replacement. these uris are replaced, and
+     * put on a relationships object where appropriate. we suppress the uri field on File
+     * because it cannot be resolved to something useful.
      *
      * @param object the json object needing transformation
      * @return the transformed object
      */
     private static JsonObject transformFedoraUris( JsonObject object ) {
-        //a Map to associate element names to their entity type
-        Map<String, String> stringTypeMap = new HashMap<>();
-        stringTypeMap.put("directFunder", "funder");
-        stringTypeMap.put("primaryFunder", "funder");
-        stringTypeMap.put("journal", "journal");
-        stringTypeMap.put("pi", "user");
-        stringTypeMap.put("performedBy", "user");
-        stringTypeMap.put("policy", "policy");
-        stringTypeMap.put("publication", "publication");
-        stringTypeMap.put("repository", "repository");
-        stringTypeMap.put("repositoryCopy", "repositoryCopy");
-        stringTypeMap.put("submission", "submission");
-        stringTypeMap.put("submitter", "user");
-
-        //and for plural elements
-        Map<String, String> arrayTypeMap = new HashMap<>();
-        arrayTypeMap.put("coPis", "user");
-        arrayTypeMap.put("repositories", "repository");
-        arrayTypeMap.put("effectivePolicies", "policy");
-        arrayTypeMap.put("grants", "grant");
-        arrayTypeMap.put("submissions", "submission");
 
         //build a copy of the object to transform
         JsonObjectBuilder job = Json.createObjectBuilder(object);
@@ -152,13 +149,13 @@ public class JsonUtility {
     }
 
     /**
-     * This method takes a "transformed" JSON object and sticks fields which are not either id or
+     * This method takes a "transformed" JSON object and sticks fields which are not id nor
      * type nor relationships into an attributes JSON object - we also suppress the context
      * and links fields
      * @param jsonObject - the supplied JsonObject
      * @return the attribeautifeid JsonObject
      */
-    static JsonObject attribeautifyJsonObject(JsonObject jsonObject) {
+    private static JsonObject attribeautifyJsonObject(JsonObject jsonObject) {
         JsonObjectBuilder job = Json.createObjectBuilder();
         JsonObjectBuilder attributes = Json.createObjectBuilder();
         boolean haveAttributes = false;
@@ -176,6 +173,13 @@ public class JsonUtility {
             job.add("attributes", attributes.build());
         }
         return job.build();
+    }
+
+    private static String wrapObject( JsonObject transformedObject ) {
+        //prepare this object for Elide
+        JsonObjectBuilder job = Json.createObjectBuilder();
+        job.add("data", transformedObject);
+        return String.valueOf(job.build());
     }
 
     /**
@@ -216,5 +220,32 @@ public class JsonUtility {
         char[] c = name.toCharArray();
         c[0] = Character.toLowerCase(c[0]);
         return new String(c);
+    }
+
+    /**
+     * sets up string arrays needed to transform fedora JSON objects
+     */
+    private static void initializeArrays() {
+        if (stringTypeMap.size() == 0) {
+            stringTypeMap.put("directFunder", "funder");
+            stringTypeMap.put("primaryFunder", "funder");
+            stringTypeMap.put("journal", "journal");
+            stringTypeMap.put("pi", "user");
+            stringTypeMap.put("performedBy", "user");
+            stringTypeMap.put("policy", "policy");
+            stringTypeMap.put("publication", "publication");
+            stringTypeMap.put("repository", "repository");
+            stringTypeMap.put("repositoryCopy", "repositoryCopy");
+            stringTypeMap.put("submission", "submission");
+            stringTypeMap.put("submitter", "user");
+        }
+
+        if (arrayTypeMap.size() == 0) {
+            arrayTypeMap.put("coPis", "user");
+            arrayTypeMap.put("repositories", "repository");
+            arrayTypeMap.put("effectivePolicies", "policy");
+            arrayTypeMap.put("grants", "grant");
+            arrayTypeMap.put("submissions", "submission");
+        }
     }
 }

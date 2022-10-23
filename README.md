@@ -12,17 +12,19 @@ PASS objects have references to other objects of several types. As creating obje
 that referred-to objects be present in the repository before ingesting the referring objects, some care must be taken in the 
 order of ingestion. We address this issue by ordering the ingesting by object type so that referred-to
 objects are always present. Since the ids for objects in our source repository were clumsy, we take advantage of
-the functionality of the target repository to assign am id when creating an object, and then use the returned
+the functionality of the target repository to assign an id when creating an object, and then use the returned
 object to map the old id to the new one for each object, to resolve references in the new situation.
 
 The target repository is a JSON:API interface through Elide. The operation of the `JavaUtility` class reflects  the 
 requirements constitution conformance with that specification
 
-[The following documentation for Assets is the same as in the `pass-test` project]
+[The following documentation for Assets is from `pass-test` project.
+Yhe file assetsND.json.gz is available at https://github.com/eclipse-pass/pass-test/blob/main/resources/assets/assetsND.json.gz ]
+]
 
 ## Assets
 
-The file assetsND.json.gzip is an NDJSON representation of the
+The file assetsND.json.gz is an NDJSON representation of the
 assets taken from our minimal assets Docker image. It contains
 some actual assets from production, with users stripped out and
 several test users created. The test users have been added in a
@@ -69,7 +71,7 @@ Once the application is configured, invocation is simple - one just needs to sup
 as the sole command line argument. The name of the executable jar will be `NDJsonMigrationApp-<version>.jar`
 so an invocation would look something like this:
 
-`java -jar NDJsonMigrationApp-<version>.jar  >path to NDJSON data file`
+`java -jar NDJsonMigrationApp-<version>.jar> path to NDJSON data file`
 
 The minimal assets for the JHU demo instance are gzipped here as `assetsND.json.gz`
 

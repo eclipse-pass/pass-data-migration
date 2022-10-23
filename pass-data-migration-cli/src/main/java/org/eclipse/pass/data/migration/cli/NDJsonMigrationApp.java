@@ -29,7 +29,6 @@ import java.io.StringReader;
 import java.util.Properties;
 import javax.json.Json;
 import javax.json.JsonObject;
-import javax.json.JsonObjectBuilder;
 import javax.json.JsonReader;
 
 import org.slf4j.Logger;
@@ -83,25 +82,21 @@ class NDJsonMigrationApp {
 
                     //replace any fedora id values that need it, form relationships element,
                     //and put other elements on an attributes object
-                    JsonObject transformedObject = JsonUtility.transformObject(jsonObject);
-
-                    //prepare this object for Elide
-                    JsonObjectBuilder job = Json.createObjectBuilder();
-                    job.add("data", transformedObject);
-                    String pushedObject = String.valueOf(job.build());
+                    String elideObjectString = JsonUtility.transformObject(jsonObject);
 
                     assert elideConnector != null;
-                    String returned = elideConnector.processJsonObject(pushedObject,
+                    String returned = elideConnector.processJsonObject(elideObjectString,
                         JsonUtility.lowerCaseFirstCharacter(typeName));
                     JsonReader returnedReader = Json.createReader(new StringReader(returned));
-                    JsonObject returnedObject = returnedReader.readObject();
-                    JsonObject data = (JsonObject) returnedObject.get("data");
+
                     try {
+                        JsonObject returnedObject = returnedReader.readObject();
+                        JsonObject data = (JsonObject) returnedObject.get("data");
                         JsonUtility.setNewId(jsonObject.get("id"), data.get("id"));
                     } catch (Exception e) {
                         String message = "Setting id failed. Either map does not contain replacement," +
                                          " or return of object" + " from target failed. \n Original object:\n" +
-                                         jsonObject + "\n" + "Pushed object" + pushedObject + "\n";
+                                         jsonObject + "\n" + "Pushed object" + elideObjectString + "\n";
                         processException(message, e);
                     }
                     returnedReader.close();
