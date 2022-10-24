@@ -30,35 +30,45 @@ import javax.json.JsonString;
 import javax.json.JsonValue;
 
 /**
- * This class handles the transformation of incoming NDJson data to make it palatable to the Elide API.
+ * This class handles the transformation of incoming NDJson data dumped from Fedora to make it palatable to
+ * the Elide API.
  */
-final class JsonUtility {
+class FedoraToElideTransformer {
 
     //This array contains the field names on PASS entities which have a fedora URI as a value
-    static String[] fedoraUriTypes = {"directFunder", "primaryFunder", "journal", "pi", "performedBy",
+    final String[] fedoraUriTypes = {"directFunder", "primaryFunder", "journal", "pi", "performedBy",
         "policy", "publication", "repository", "repositoryCopy",
         "submission", "submitter", "uri"};
 
     //These are PASS entity fields whose values are lists of fedora URIs
-    static String[] fedoraUriArrayTypes = {"coPis", "repositories", "effectivePolicies", "grants", "submissions" };
+    String[] fedoraUriArrayTypes = {"coPis", "repositories", "effectivePolicies", "grants", "submissions" };
 
     // a map to keep track of new ids we have minted, regardless of type
     static Map<JsonValue, JsonValue> idMap = new HashMap<>();
 
-
     //a Map to associate element names to their entity type
-    static Map<String, String> stringTypeMap = new HashMap<>();
+    Map<String, String> stringTypeMap = new HashMap<>() {{
+            put("directFunder", "funder");
+            put("primaryFunder", "funder");
+            put("journal", "journal");
+            put("pi", "user");
+            put("performedBy", "user");
+            put("policy", "policy");
+            put("publication", "publication");
+            put("repository", "repository");
+            put("repositoryCopy", "repositoryCopy");
+            put("submission", "submission");
+            put("submitter", "user");
+        }};
+
     //and for plural elements
-    static Map<String, String> arrayTypeMap = new HashMap<>();
-
-    static boolean initialized = false;
-
-    /**
-     * A null constructor for this utility class, because security
-     */
-    private void JavaUtility() {
-        //never called
-    }
+    Map<String, String> arrayTypeMap = new HashMap<>() {{
+            put("coPis", "user");
+            put("repositories", "repository");
+            put("effectivePolicies", "policy");
+            put("grants", "grant");
+            put("submissions", "submission");
+        }};
 
     /**
      * This method orchestrates all transformation methods and wraps it in data object, then
@@ -67,12 +77,7 @@ final class JsonUtility {
      * @param object - the JSON object needing transformation
      * @return the transformed object's string representation
      */
-    static String transformObject(JsonObject object) {
-        //initialize our string arrays once
-        if (!initialized) {
-            initializeArrays();
-            initialized = true;
-        }
+    String transformObject(JsonObject object) {
 
         JsonObject transformed = transformFedoraUris( object );
         JsonObject attribeautified = attribeautifyJsonObject(transformed);
@@ -87,7 +92,7 @@ final class JsonUtility {
      * @param object the json object needing transformation
      * @return the transformed object
      */
-    private static JsonObject transformFedoraUris( JsonObject object ) {
+    protected JsonObject transformFedoraUris( JsonObject object ) {
 
         //build a copy of the object to transform
         JsonObjectBuilder job = Json.createObjectBuilder(object);
@@ -155,7 +160,7 @@ final class JsonUtility {
      * @param jsonObject - the supplied JsonObject
      * @return the attribeautifeid JsonObject
      */
-    private static JsonObject attribeautifyJsonObject(JsonObject jsonObject) {
+    protected JsonObject attribeautifyJsonObject(JsonObject jsonObject) {
         JsonObjectBuilder job = Json.createObjectBuilder();
         JsonObjectBuilder attributes = Json.createObjectBuilder();
         boolean haveAttributes = false;
@@ -175,7 +180,7 @@ final class JsonUtility {
         return job.build();
     }
 
-    private static String wrapObject( JsonObject transformedObject ) {
+    protected String wrapObject( JsonObject transformedObject ) {
         //prepare this object for Elide
         JsonObjectBuilder job = Json.createObjectBuilder();
         job.add("data", transformedObject);
@@ -188,7 +193,7 @@ final class JsonUtility {
      * @param key the key for the field in the object
      * @return the stringified JsonValue for this key
      */
-    static String jsonValueString(JsonObject object, String key) {
+    String jsonValueString(JsonObject object, String key) {
         return ((JsonString)object.get(key)).getString();
     }
 
@@ -197,7 +202,7 @@ final class JsonUtility {
      * @param oldId - the old id from fedora
      * @param newId - the new id assigned by elide
      */
-    static void setNewId (JsonValue oldId, JsonValue newId) {
+    void setNewId (JsonValue oldId, JsonValue newId) {
         idMap.put(oldId, newId);
     }
 
@@ -206,7 +211,7 @@ final class JsonUtility {
      * @param oldId - the old id from fedora
      * @return the new id assigned by elide
      */
-    static JsonValue getNewId(JsonValue oldId) {
+    JsonValue getNewId(JsonValue oldId) {
         return idMap.get(oldId);
     }
 
@@ -216,36 +221,10 @@ final class JsonUtility {
      * @param name string to be initially lower cased
      * @return the lower cased string
      */
-    static String lowerCaseFirstCharacter (String name) {
+    String lowerCaseFirstCharacter (String name) {
         char[] c = name.toCharArray();
         c[0] = Character.toLowerCase(c[0]);
         return new String(c);
     }
 
-    /**
-     * sets up string arrays needed to transform fedora JSON objects
-     */
-    private static void initializeArrays() {
-        if (stringTypeMap.size() == 0) {
-            stringTypeMap.put("directFunder", "funder");
-            stringTypeMap.put("primaryFunder", "funder");
-            stringTypeMap.put("journal", "journal");
-            stringTypeMap.put("pi", "user");
-            stringTypeMap.put("performedBy", "user");
-            stringTypeMap.put("policy", "policy");
-            stringTypeMap.put("publication", "publication");
-            stringTypeMap.put("repository", "repository");
-            stringTypeMap.put("repositoryCopy", "repositoryCopy");
-            stringTypeMap.put("submission", "submission");
-            stringTypeMap.put("submitter", "user");
-        }
-
-        if (arrayTypeMap.size() == 0) {
-            arrayTypeMap.put("coPis", "user");
-            arrayTypeMap.put("repositories", "repository");
-            arrayTypeMap.put("effectivePolicies", "policy");
-            arrayTypeMap.put("grants", "grant");
-            arrayTypeMap.put("submissions", "submission");
-        }
-    }
 }
