@@ -42,13 +42,15 @@ class NDJsonMigrationApp {
     private static final Logger LOG = LoggerFactory.getLogger(NDJsonMigrationApp.class);
 
     // array of "primary" types, in the order in which they need to be processed
-    //to guarantee that referred-to objects have already been created
+    // to guarantee that referred-to objects have already been created
     String[] types = {"User", "Journal", "Publication", "Repository",
                       "Policy", "Funder", "Grant", "Submission", "SubmissionEvent", "RepositoryCopy",
                       "Deposit", "File"};
 
     // path to the NDJSON data file
     String jsonFileName;
+
+    FedoraToElideTransformer fedoraToElideTransformer = new FedoraToElideTransformer();
 
     public NDJsonMigrationApp(String dataFileName) {
         this.jsonFileName = dataFileName;
@@ -78,33 +80,34 @@ class NDJsonMigrationApp {
                 JsonObject jsonObject = jsonReader.readObject();
 
                 if (jsonObject.containsKey("type") &&
-                    JsonUtility.jsonValueString(jsonObject,"type").equals(typeName)) {
+                    fedoraToElideTransformer.jsonValueString(jsonObject, "type").equals(typeName)) {
 
                     //replace any fedora id values that need it, form relationships element,
                     //and put other elements on an attributes object
-                    String elideObjectString = JsonUtility.transformObject(jsonObject);
+                    String elideObjectString = fedoraToElideTransformer.transformObject(jsonObject);
 
                     assert elideConnector != null;
-                    String returned = elideConnector.processJsonObject(elideObjectString,
-                        JsonUtility.lowerCaseFirstCharacter(typeName));
+                    String returned = elideConnector.
+                        processJsonObject(elideObjectString,
+                                          fedoraToElideTransformer.lowerCaseFirstCharacter(typeName));
                     JsonReader returnedReader = Json.createReader(new StringReader(returned));
 
                     try {
                         JsonObject returnedObject = returnedReader.readObject();
                         JsonObject data = (JsonObject) returnedObject.get("data");
-                        JsonUtility.setNewId(jsonObject.get("id"), data.get("id"));
+                        fedoraToElideTransformer.setNewId(jsonObject.get("id"), data.get("id"));
                     } catch (Exception e) {
                         String message = "Setting id failed. Either map does not contain replacement," +
                                          " or return of object" + " from target failed. \n Original object:\n" +
                                          jsonObject + "\n" + "Pushed object" + elideObjectString + "\n";
-                        processException(message, e);
+                        throw(processException(message, e));
                     }
                     returnedReader.close();
                 }
             }
             reader.close();
         }
-        System.out.println(JsonUtility.idMap.size() + " objects created");
+        System.out.println(FedoraToElideTransformer.idMap.size() + " objects created");
     }
 
     /**
@@ -144,7 +147,6 @@ class NDJsonMigrationApp {
         if (e != null) {
             clie = new PassCliException(message, e);
             LOG.error(message, e);
-            e.printStackTrace();
         } else {
             clie = new PassCliException(message);
             LOG.error(message);
