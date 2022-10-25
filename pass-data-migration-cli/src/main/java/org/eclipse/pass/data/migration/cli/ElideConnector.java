@@ -41,6 +41,11 @@ public class ElideConnector {
 
     String elideBaseUrl;
 
+    OkHttpClient client = new OkHttpClient();
+
+    MediaType JSON
+        = MediaType.parse("application/vnd.api+json; charset=utf-8");
+
     ElideConnector(Properties properties) {
         String host = properties.containsKey(hostProperty) ? (String) properties.get(hostProperty) : defaultHost;
         String port = properties.containsKey(portProperty) ? (String) properties.get(portProperty) : defaultPort;
@@ -51,9 +56,7 @@ public class ElideConnector {
     }
 
     String processJsonObject (String json, String endpoint) throws IOException {
-        MediaType JSON
-            = MediaType.parse("application/vnd.api+json; charset=utf-8");
-        OkHttpClient client = new OkHttpClient();
+
         RequestBody body = RequestBody.create( json , JSON);
         Request request = new Request.Builder()
             .url(elideBaseUrl + endpoint)
