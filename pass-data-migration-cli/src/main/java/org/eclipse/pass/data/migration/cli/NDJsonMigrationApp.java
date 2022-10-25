@@ -95,11 +95,11 @@ class NDJsonMigrationApp {
                     try {
                         JsonObject returnedObject = returnedReader.readObject();
                         JsonObject data = (JsonObject) returnedObject.get("data");
-                        fedoraToElideTransformer.setNewId(jsonObject.get("id"), data.get("id"));
+                        fedoraToElideTransformer.addNewId(jsonObject.get("id"), data.get("id"));
                     } catch (Exception e) {
                         String message = "Setting id failed. Either map does not contain replacement," +
-                                         " or return of object" + " from target failed. \n Original object:\n" +
-                                         jsonObject + "\n" + "Pushed object" + elideObjectString + "\n";
+                                         " or return of object from target failed. \n Original object:\n" +
+                                         jsonObject + "\n" + "Pushed object:" + elideObjectString + "\n";
                         throw(processException(message, e));
                     }
                     returnedReader.close();
@@ -107,7 +107,9 @@ class NDJsonMigrationApp {
             }
             reader.close();
         }
-        System.out.println(FedoraToElideTransformer.idMap.size() + " objects created");
+        String finalMessage = FedoraToElideTransformer.idMap.size() + " objects created";
+        System.out.println(finalMessage);
+        LOG.info(finalMessage);
     }
 
     /**

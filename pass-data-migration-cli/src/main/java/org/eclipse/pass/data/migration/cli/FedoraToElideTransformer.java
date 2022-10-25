@@ -72,7 +72,7 @@ class FedoraToElideTransformer {
 
     /**
      * This method orchestrates all transformation methods and wraps it in data object, then
-     * sends the representing string for submission via the ElideConnector
+     * sends the representing string back for submission via the ElideConnector
      *
      * @param object - the JSON object needing transformation
      * @return the transformed object's string representation
@@ -81,7 +81,7 @@ class FedoraToElideTransformer {
 
         JsonObject transformed = transformFedoraUris( object );
         JsonObject attribeautified = attribeautifyJsonObject(transformed);
-        return wrapObject( attribeautified);
+        return wrapObject(attribeautified);
     }
 
     /**
@@ -202,7 +202,7 @@ class FedoraToElideTransformer {
      * @param oldId - the old id from fedora
      * @param newId - the new id assigned by elide
      */
-    void setNewId (JsonValue oldId, JsonValue newId) {
+    void addNewId(JsonValue oldId, JsonValue newId) {
         idMap.put(oldId, newId);
     }
 

@@ -1,4 +1,4 @@
 package org.eclipse.pass.data.migration.cli;
 
-public class JSonTransformTest {
+public class FedoraToElideTransformerTest {
 }
