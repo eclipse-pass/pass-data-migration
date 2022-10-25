@@ -51,7 +51,6 @@
 
   <modules>
     <module>pass-data-migration-cli</module>
-    <module>pass-data-migration-integration</module>
   </modules>
 
   <scm>
@@ -76,11 +75,6 @@
         <groupId>args4j</groupId>
         <artifactId>args4j</artifactId>
         <version>${args4.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.eclipse.pass</groupId>
-        <artifactId>pass-data-migration-types</artifactId>
-        <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.glassfish</groupId>
