@@ -19,10 +19,7 @@ import javax.json.JsonReader;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(MockitoJUnitRunner.class)
 public class FedoraToElideTransformerTest {
 
     FedoraToElideTransformer underTest = new FedoraToElideTransformer();
@@ -59,9 +56,8 @@ public class FedoraToElideTransformerTest {
         assertEquals(12, originalObjects.size());
 
         //initialize idMap to mock what we would get from the Elide service
-        int newId = 0;
         for (String oldId : oldIds) {
-            underTest.addNewId(Json.createValue(oldId), Json.createValue(newId++));
+            underTest.addNewId(Json.createValue(oldId), Json.createValue(oldIds.indexOf(oldId)));
         }
     }
 
