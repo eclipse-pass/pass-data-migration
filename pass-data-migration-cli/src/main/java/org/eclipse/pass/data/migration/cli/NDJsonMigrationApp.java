@@ -71,6 +71,8 @@ class NDJsonMigrationApp {
         LOG.info("Starting processing of the NDJSON file " + jsonFileName);
         //we do a new pass through the data for each type
         for (String typeName : types) {
+
+            int count = 0;
             LOG.info("Processing entities of type " + typeName);
             BufferedReader reader = new BufferedReader(new FileReader(jsonFileName));
             String currentLine;
@@ -103,9 +105,11 @@ class NDJsonMigrationApp {
                         throw(processException(message, e));
                     }
                     returnedReader.close();
+                    count ++;
                 }
             }
             reader.close();
+            LOG.info("Finished processing " + count + " objects of type "  + typeName);
         }
         String finalMessage = FedoraToElideTransformer.idMap.size() + " objects created";
         System.out.println(finalMessage);
