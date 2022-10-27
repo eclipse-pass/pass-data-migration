@@ -29,11 +29,15 @@ import javax.json.JsonObjectBuilder;
 import javax.json.JsonString;
 import javax.json.JsonValue;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * This class handles the transformation of incoming NDJson data dumped from Fedora to make it palatable to
  * the Elide API.
  */
 class FedoraToElideTransformer {
+    private static final Logger LOG = LoggerFactory.getLogger(FedoraToElideTransformer.class);
 
     //This array contains the field names on PASS entities which have a fedora URI as a value
     final String[] fedoraUriTypes = {"directFunder", "primaryFunder", "journal", "pi", "performedBy",
@@ -212,7 +216,14 @@ class FedoraToElideTransformer {
      * @return the new id assigned by elide
      */
     JsonValue getNewId(JsonValue oldId) {
-        return idMap.get(oldId);
+        JsonValue newId = idMap.get(oldId);
+
+        if (newId != null) {
+            return idMap.get(oldId);
+        } else {
+            LOG.error("Failed to find old id " + oldId + " in idMap");
+            return null;
+        }
     }
 
     /**
