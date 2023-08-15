@@ -1,4 +1,53 @@
-# PASS-DATA-MIGRATION
+# Introduction 
+
+This project consists of several command line tools designed to export data (objects and binary files) from the first version of PASS,
+do a bunch of remediation, and load the data into the new version of PASS.
+
+This is not designed to be a general tool. It is particular to the idiosyncrasies of the first JHU deployment of PASS.
+
+# Package format
+
+A zip consisting of a file objects.ndjson and a directory hierarchy starting at “files” consisting of binary files uploaded by the user. The File objects uri field should contain the full path to the file in the “files” directory. 
+
+The objects.ndjson file will contain PASS objects in newline delimited JSON format. Each line will be a PASS object in JSON-LD format with the following transformations. Each property starting with “@” will have the “@” stripped. The “journalName_suggest” field is removed. (This is to match the design of the original data migration tool and seems reasonable in any case.)
+
+# Export
+
+The export tool retrieves all of the PASS objects from an Elasticsearch index. Each File object also has the binary retrieved which is associated with it in Fedora.
+
+Usage:
+```
+java -jar pass-data-migration-export-cli/target/MigrationExportApp-0.2.0-SNAPSHOT.jar PACKAGE_DIR ELASTIC_SEARCH_URL COOKIE
+```
+
+The PACKAGE_DIR is a local directory to write the data in the format above.
+The ELASTIC_SEARCH_URL is an Elasticsearch endpoint like https://pass.jhu.edu/es.
+The COOKIE is the value retrieved from the Cookie header after going through Shib authentication.
+
+# Remediation
+
+## Update locator ids
+
+The type identifiers used to construct locator ids on a User have changed. Instead of “hopkins-id” and “jhed”, the locator ids should use “unique-id” and “eppn”.
+
+## Normalize grant awards numbers
+
+The grant award numbers are now being normalized by the grant loader. The exported award numbers must be normalized the same way.
+
+## Delete duplicate objects
+
+There are duplicated objects in PASS production. Duplicates need to be deleted and references updated accordingly. See 
+https://docs.google.com/document/d/14lK5XmJ9C4ABBEhYfsM8rnWF5oucx9_RS5fi8t2PwrU/edit#heading=h.5bge4zfb94jp for some thoughts. The existing output from the pass dedupe tool can be ignored. We should be able to just load all the objects in memory and quickly find the duplicates by creating a hashmap keyed by the fields which indicate a duplicate. Duplicates should be deleted and references updated.
+
+## Delete useless objects
+
+There are a handful of File objects with no submission or binary. They should just be removed. 
+
+## Import
+
+Update original tool.
+
+# Original documentation
 
 This project is designed to produce an executable jar to operate on an NDJSON file representing all PASS entities pulled
 from a repository. The source repository doesn't matter, but in our case the pull was from an Elasticsearh

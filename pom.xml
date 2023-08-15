@@ -51,6 +51,7 @@
 
   <modules>
     <module>pass-data-migration-cli</module>
+    <module>pass-data-migration-export-cli</module>
   </modules>
 
   <scm>
