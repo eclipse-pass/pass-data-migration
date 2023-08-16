@@ -7,7 +7,6 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.net.URI;
 import java.nio.file.Path;
-
 import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
@@ -29,6 +28,8 @@ import okhttp3.Response;
  */
 public class PassExportApp {
     private final static MediaType JSON_MEDIA_TYPE = MediaType.parse("application/json");
+
+    private PassExportApp() {}
 
     private static JsonObject parse_json_object(Response response) throws IOException {
         try (Reader in = response.body().charStream(); JsonReader json_in = Json.createReader(in)) {
@@ -110,7 +111,6 @@ public class PassExportApp {
 
         return parse_json_object(response);
     }
-
 
     private static int write_objects_and_files(OkHttpClient client, String cookie, PrintWriter out, Path package_dir,
             JsonObject es_result) throws IOException {

@@ -9,7 +9,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
-
 import javax.json.Json;
 import javax.json.JsonObject;
 
@@ -17,6 +16,8 @@ import javax.json.JsonObject;
  * Utilities for managing a migration package.
  */
 public class PackageUtil {
+    private PackageUtil() {}
+
     public static void initPackage(Path packageDir) throws IOException {
         Files.createDirectories(getFilesDir(packageDir));
     }
