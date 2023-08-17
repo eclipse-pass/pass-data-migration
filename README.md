@@ -17,7 +17,7 @@ The export tool retrieves all of the PASS objects from an Elasticsearch index. E
 
 Usage:
 ```
-java -jar pass-data-migration-export-cli/target/MigrationExportApp-0.2.0-SNAPSHOT.jar PACKAGE_DIR ELASTIC_SEARCH_URL COOKIE
+java -jar target/MigrationExportApp.jar PACKAGE_DIR ELASTIC_SEARCH_URL COOKIE
 ```
 
 The PACKAGE_DIR is a local directory to write the data in the format above.
