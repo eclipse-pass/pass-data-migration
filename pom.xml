@@ -23,7 +23,7 @@
   <parent>
     <artifactId>eclipse-pass-parent</artifactId>
     <groupId>org.eclipse.pass</groupId>
-    <version>0.9.0-SNAPSHOT</version>
+    <version>0.8.0-SNAPSHOT</version>
   </parent>
 
   <artifactId>pass-data-migration</artifactId>
