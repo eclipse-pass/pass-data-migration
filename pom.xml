@@ -21,73 +21,19 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>org.eclipse.pass</groupId>
     <artifactId>eclipse-pass-parent</artifactId>
-    <version>0.1.0</version>
+    <groupId>org.eclipse.pass</groupId>
+    <version>0.9.0-SNAPSHOT</version>
   </parent>
 
   <artifactId>pass-data-migration</artifactId>
-  <packaging>pom</packaging>
-  <version>0.2.0-SNAPSHOT</version>
-
-  <name>Eclipse-PASS Data Migration Tool</name>
-  <description>Tool for Migration PASS Date</description>
-  <url>https://github.com/eclipse-pass/pass-data-migration</url>
-  <licenses>
-    <license>
-      <name>The Apache License, Version 2.0</name>
-      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-    </license>
-  </licenses>
-
-  <developers>
-    <developer>
-      <name>Jim Martino</name>
-      <email>jrm@jhu.edu</email>
-      <organization>The Sheridan Libraries, Johns Hopkins University</organization>
-      <organizationUrl>https://www.library.jhu.edu/</organizationUrl>
-    </developer>
-  </developers>
-
-  <modules>
-    <module>pass-data-migration-cli</module>
-  </modules>
-
-  <scm>
-    <connection>scm:git:git://github.com/eclipse-pass/pass-data-migration.git</connection>
-    <developerConnection>scm:git:ssh://github.com:eclipse-pass/pass-data-migration.git</developerConnection>
-    <url>http://github.com/eclipse-pass/pass-data-migration/tree/main/</url>
-    <tag>HEAD</tag>
-  </scm>
 
   <properties>
-    <maven.compiler.source>11</maven.compiler.source>
-    <maven.compiler.target>11</maven.compiler.target>
     <args4.version>2.33</args4.version>
     <javax.jason.version>1.1.4</javax.jason.version>
     <okhttp.version>4.10.0</okhttp.version>
     <slf4j.version>1.7.36</slf4j.version>
   </properties>
-
-  <dependencyManagement>
-    <dependencies>
-      <dependency>
-        <groupId>args4j</groupId>
-        <artifactId>args4j</artifactId>
-        <version>${args4.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.glassfish</groupId>
-        <artifactId>javax.json</artifactId>
-        <version>${javax.jason.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.squareup.okhttp3</groupId>
-        <artifactId>okhttp</artifactId>
-        <version>${okhttp.version}</version>
-      </dependency>
-    </dependencies>
-  </dependencyManagement>
 
   <repositories>
     <repository>
@@ -100,22 +46,87 @@
     </repository>
   </repositories>
 
+  <dependencies>
+    <dependency>
+      <groupId>args4j</groupId>
+      <artifactId>args4j</artifactId>
+      <version>${args4.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.glassfish</groupId>
+      <artifactId>javax.json</artifactId>
+      <version>${javax.jason.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>jcl-over-slf4j</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>com.squareup.okhttp3</groupId>
+      <artifactId>okhttp</artifactId>
+      <version>${okhttp.version}</version>
+    </dependency>
+
+    <!-- Test dependencies -->
+
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <version>${junit.jupiter.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <version>${junit.jupiter.version}</version>
+    </dependency>
+  </dependencies>
+
   <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>3.0.0</version>
+        <executions>
+          <execution>
+            <id>jhu-grant-loader</id>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <shadedArtifactAttached>true</shadedArtifactAttached>
+              <finalName>MigrationExportApp</finalName>
+              <shadedClassifierName>jhu</shadedClassifierName>
+              <transformers>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                  <mainClass>org.eclipse.pass.data.migration.cli.PassExportApp</mainClass>
+                </transformer>
+              </transformers>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
   </build>
 
-  <profiles>
 
-    <profile>
-      <id>external</id>
-      <activation>
-        <property>
-          <name>external</name>
-        </property>
-      </activation>
-      <properties>
-        <scp.port>122</scp.port>
-      </properties>
-    </profile>
-
-  </profiles>
 </project>
