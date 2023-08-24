@@ -15,6 +15,8 @@ import javax.json.JsonReader;
 import javax.json.JsonString;
 import javax.json.JsonValue;
 
+import org.eclipse.pass.data.migration.PackageUtil;
+
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;

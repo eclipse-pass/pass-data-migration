@@ -80,6 +80,18 @@
       <version>${okhttp.version}</version>
     </dependency>
 
+    <dependency>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+      <version>2.11.0</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.eclipse.pass</groupId>
+      <artifactId>pass-data-client</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
     <!-- Test dependencies -->
 
     <dependency>
@@ -108,7 +120,7 @@
         <version>3.0.0</version>
         <executions>
           <execution>
-            <id>jhu-grant-loader</id>
+            <id>export-app</id>
             <goals>
               <goal>shade</goal>
             </goals>
@@ -123,6 +135,38 @@
               </transformers>
             </configuration>
           </execution>
+          <execution>
+            <id>remediation-app</id>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <shadedArtifactAttached>true</shadedArtifactAttached>
+              <finalName>MigrationRemediationApp</finalName>
+              <shadedClassifierName>jhu</shadedClassifierName>
+              <transformers>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                  <mainClass>org.eclipse.pass.data.migration.cli.PassRemediationApp</mainClass>
+                </transformer>
+              </transformers>
+            </configuration>
+          </execution>
+          <execution>
+            <id>import-app</id>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <shadedArtifactAttached>true</shadedArtifactAttached>
+              <finalName>MigrationImportApp</finalName>
+              <shadedClassifierName>jhu</shadedClassifierName>
+              <transformers>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                  <mainClass>org.eclipse.pass.data.migration.cli.PassImportApp</mainClass>
+                </transformer>
+              </transformers>
+            </configuration>
+          </execution>          
         </executions>
       </plugin>
     </plugins>

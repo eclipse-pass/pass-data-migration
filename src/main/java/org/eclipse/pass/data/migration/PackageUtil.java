@@ -1,4 +1,4 @@
-package org.eclipse.pass.data.migration.cli;
+package org.eclipse.pass.data.migration;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -45,6 +45,12 @@ public class PackageUtil {
         out.flush();
     }
 
+    public static void writeObjects(Path packageDir, Stream<JsonObject> objects) throws IOException {
+        try (PrintWriter out = PackageUtil.getObjectsWriter(packageDir)) {
+            PackageUtil.writeObjects(out, objects);
+        }
+    }
+
     public static void writeFile(Path packageDir, String path, InputStream is) throws IOException {
         if (path.startsWith("/")) {
             path = path.substring(1);
@@ -70,7 +76,7 @@ public class PackageUtil {
         }
 
         if (!o.containsKey("type")) {
-            throw new RuntimeException("Missing required key id: " + o);
+            throw new RuntimeException("Missing required key type: " + o);
         }
 
         if (o.getString("type").equals("File")) {
