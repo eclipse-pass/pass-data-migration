@@ -1,4 +1,4 @@
-package org.eclipse.pass.data.migration;
+package org.eclipse.pass.migration;
 
 import java.io.IOException;
 import java.io.InputStream;

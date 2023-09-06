@@ -1,8 +1,7 @@
-package org.eclipse.pass.data.migration.cli;
+package org.eclipse.pass.migration.cli;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.URI;
 import java.nio.file.Path;
 import java.time.ZonedDateTime;
@@ -14,7 +13,8 @@ import javax.json.JsonObject;
 import javax.json.JsonString;
 import javax.json.JsonValue;
 
-import org.eclipse.pass.data.migration.PackageUtil;
+import org.eclipse.pass.migration.JsonUtil;
+import org.eclipse.pass.migration.PackageUtil;
 import org.eclipse.pass.support.client.ModelUtil;
 import org.eclipse.pass.support.client.PassClient;
 import org.eclipse.pass.support.client.model.Grant;
@@ -26,18 +26,16 @@ import org.eclipse.pass.support.client.model.User;
 import org.eclipse.pass.support.client.model.UserRole;
 
 public class PassImportApp {
-    private static final Map<String, Class<?>> json_property_type = new HashMap<>();
-
     private PassImportApp() {
     }
 
     // Create a PassEntity and set the id. It must have an appropriate constructor.
     private static PassEntity create_pass_entity(String id, String type) {
         try {
-            return (PassEntity) Class.forName("org.eclipse.pass.support.client.model." + type)
+            return (PassEntity) JsonUtil.getPassJavaType(type)
                     .getConstructor(String.class).newInstance(id);
         } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException
-                | NoSuchMethodException | SecurityException | ClassNotFoundException e) {
+                | NoSuchMethodException | SecurityException e) {
             throw new RuntimeException("Failed to create: " + type, e);
         }
     }
@@ -53,25 +51,6 @@ public class PassImportApp {
         }
     }
 
-    // Create a PassEntity
-    private static Class<?> get_property_type(Class<?> klass, String key) {
-        if (json_property_type.containsKey(key)) {
-            return json_property_type.get(key);
-        }
-
-        String get_method = "get" + Character.toUpperCase(key.charAt(0)) + key.substring(1);
-        Class<?> type = null;
-
-        for (Method m : klass.getMethods()) {
-            if (m.getName().equals(get_method)) {
-                type = m.getReturnType();
-                break;
-            }
-        }
-
-        json_property_type.put(key, type);
-        return type;
-    }
 
     private static String resolve_ref(Map<String, PassEntity> entities, JsonValue v) {
         return resolve_ref(entities, JsonString.class.cast(v).getString());
@@ -88,7 +67,7 @@ public class PassImportApp {
     // Set a value on an object using a set method.
     private static void set_value(Object obj, String key, JsonValue json_value, Map<String, PassEntity> entities) {
         String set_method = "set" + Character.toUpperCase(key.charAt(0)) + key.substring(1);
-        Class<?> java_type = get_property_type(obj.getClass(), key);
+        Class<?> java_type = JsonUtil.getPropertyJavaType(obj.getClass(), key);
 
         Object value;
 
@@ -133,7 +112,6 @@ public class PassImportApp {
             } else if (Enum.class.isAssignableFrom(java_type)) {
                 value = create_pass_enum(s, java_type);
             } else if (PassEntity.class.isAssignableFrom(java_type)) {
-
                 value = create_pass_entity(resolve_ref(entities, s), java_type.getSimpleName());
             } else {
                 throw new RuntimeException("Unknown type " + java_type + " for " + key);
@@ -185,6 +163,7 @@ public class PassImportApp {
                     set_value(result, k, v, entities);
                 } catch (Exception e) {
                     System.err.println("Error: Failed to set value " + k + " from " + o);
+                    System.err.println(e.getMessage());
                 }
             }
         });
