@@ -22,20 +22,7 @@ public class PassRemediationApp {
         System.err.println("Loading " + input_dir);
         PassRemediator pr = new PassRemediator(input_dir);
 
-        System.err.println("Remove not needed objects");
-        pr.removeUselessObjects();
-
-        System.err.println("Fixing User locator ids");
-        pr.fixLocatorIds();
-
-        System.err.println("Fixing field names");
-        pr.fixFieldNames();
-
-        System.err.println("Normalizing Grant award numbers");
-        pr.normalizeAwardNumbers();
-
-        System.err.println("Fixing duplicates");
-        pr.fixDuplicates();
+        pr.run();
 
         System.err.println("Writing " + output_dir);
         pr.writePackage(output_dir);
