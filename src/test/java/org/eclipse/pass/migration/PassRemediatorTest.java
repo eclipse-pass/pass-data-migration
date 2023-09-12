@@ -16,10 +16,6 @@ public class PassRemediatorTest {
 
     @Test
     public void test() {
-        pr.removeUselessObjects();
-        pr.fixLocatorIds();
-        pr.fixFieldNames();
-        pr.normalizeAwardNumbers();
-        pr.fixDuplicates();
+        pr.run();
     }
 }

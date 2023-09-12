@@ -22,7 +22,15 @@ java -jar target/MigrationExportApp.jar PACKAGE_DIR ELASTIC_SEARCH_URL COOKIE
 
 The PACKAGE_DIR is a local directory to write the data in the format above.
 The ELASTIC_SEARCH_URL is an Elasticsearch endpoint like https://pass.jhu.edu/es.
-The COOKIE is the value retrieved from the Cookie header after going through Shib authentication.
+The COOKIE is the value retrieved from the Cookie header after going through Shib authentication. If the COOKIE is an empty string then it won't be provided with the requests.
+
+These system properties can be set:
+* fcrepo.url:  http://localhost:8080/fcrepo/
+* fcrepo.user: user
+* fcrepo.pass: xxx
+
+If set they will be used to rewrite fcrepo urls for binaries (useful if the index has a different base hostname for them) and also used for basic auth. 
+
 
 # Remediation
 

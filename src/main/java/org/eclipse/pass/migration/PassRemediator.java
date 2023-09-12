@@ -4,8 +4,10 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import javax.json.Json;
@@ -25,11 +27,11 @@ import org.eclipse.pass.support.client.model.Source;
 public class PassRemediator {
     private Path input_package;
 
-    // identifier -> object
+    // Identifier -> PASS object
     private final Map<String, JsonObject> objects;
 
-    // name -> target type
-    private final Map<String, String> relations;
+    // Target object id -> list of relationships with this object as a target
+    Map<String, List<Relation>> target_relations = new HashMap<>();
 
     private static String get_string(JsonObject o, String key) {
         return get_string(o, key, null);
@@ -61,16 +63,26 @@ public class PassRemediator {
 
     public PassRemediator(Path input_package) throws IOException {
         this.objects = new HashMap<>();
-        this.relations = new HashMap<>();
         this.input_package = input_package;
-
-        // TODO lookup like in importer..
-
-        relations.put("submitter", "User");
-        relations.put("pi", "User");
-        relations.put("coPis", "User");
+        this.target_relations = new HashMap<>();
 
         update(PackageUtil.readObjects(input_package));
+
+        // Needed for relations code to run
+        fix_field_names();
+
+        objects.values().forEach(o -> {
+            get_relations(o).forEach(r -> {
+                List<Relation> rels = target_relations.get(r.target);
+
+                if (rels == null) {
+                    rels = new ArrayList<>();
+                    target_relations.put(r.target, rels);
+                }
+
+                rels.add(r);
+            });
+        });
     }
 
     private Stream<JsonObject> get_objects_of_type(String type) {
@@ -85,7 +97,7 @@ public class PassRemediator {
         });
     }
 
-    public void fixLocatorIds() {
+    private void fix_locator_ids() {
         List<JsonObject> updated_users = new ArrayList<>();
 
         get_objects_of_type("User").forEach(o -> {
@@ -109,7 +121,7 @@ public class PassRemediator {
         update(updated_users.stream());
     }
 
-    public void fixFieldNames() {
+    private void fix_field_names() {
         List<JsonObject> updated = new ArrayList<>();
 
         // Publication.abstract -> Publication.publicationAbstract
@@ -127,7 +139,7 @@ public class PassRemediator {
         update(updated.stream());
     }
 
-    public void normalizeAwardNumbers() {
+    private void normalize_award_numbers() {
         List<JsonObject> updated_grants = new ArrayList<>();
 
         get_objects_of_type("Grant").forEach(o -> {
@@ -145,34 +157,103 @@ public class PassRemediator {
         update(updated_grants.stream());
     }
 
-    // Return null if no need to check for dupes for that type
-    private String get_unique_key(JsonObject o) {
+    private void add_unique_key(List<String> keys, String type, JsonObject o, String... props) {
+        StringBuilder key = new StringBuilder();
+
+        for (String prop : props) {
+            if (o.containsKey(prop)) {
+                key.append("," + get_string(o, prop));
+            }
+        }
+
+        if (!key.isEmpty()) {
+            keys.add(type + key.toString());
+        }
+    }
+
+    private List<String> get_unique_keys(JsonObject o) {
+        List<String> keys = new ArrayList<>();
         String type = get_string(o, "type");
 
+        // Only check certain types for dupes based on previous research
         switch (type) {
         case "Grant":
-            return get_string(o, "awardNumber");
-        case "Journal":
-            return get_string(o, "journalName");
-        // + "@" + String.join(",", get_string_array(o, "issns"));
+            add_unique_key(keys, type, o, "localKey");
+
+            if (keys.isEmpty()) {
+                throw new RuntimeException("Cannot generate unique key for " + o);
+            }
+
+            break;
+        case "Journal": {
+            add_unique_key(keys, type, o, "nlmta");
+
+            if (o.containsKey("issns")) {
+                String name = get_string(o, "journalName");
+
+                get_string_array(o, "issns").forEach(issn -> {
+                    keys.add(type + "," + name + "," + issn);
+                });
+            }
+
+            if (keys.isEmpty()) {
+                throw new RuntimeException("Cannot generate unique key for " + o);
+            }
+
+            break;
+        }
         case "Funder":
-            return get_string(o, "name") + "," + get_string(o, "localKey");
+            add_unique_key(keys, type, o, "localKey");
+
+            if (keys.isEmpty()) {
+                throw new RuntimeException("Cannot generate unique key for " + o);
+            }
+
+            break;
+        case "Publisher":
+            add_unique_key(keys, type, o, "name", "pmcParticipation");
+
+            if (keys.isEmpty()) {
+                throw new RuntimeException("Cannot generate unique key for " + o);
+            }
+
+            break;
         case "Submission":
             String source = get_string(o, "source");
 
             // Only consider non-pass submissions
-            if (source.equals(Source.PASS.getValue())) {
-                return null;
+            if (source.equals(Source.OTHER.getValue())) {
+                add_unique_key(keys, type, o, "publication", "submitter");
+
+                if (keys.isEmpty()) {
+                    throw new RuntimeException("Cannot generate unique key for " + o);
+                }
             }
 
-            return get_string(o, "publication");
+            break;
         case "Publication":
-            return get_string(o, "title");
+            add_unique_key(keys, type, o, "title");
+            add_unique_key(keys, type, o, "doi");
+            add_unique_key(keys, type, o, "pmid");
+
+            if (keys.isEmpty()) {
+                throw new RuntimeException("Cannot generate unique key for " + o);
+            }
+
+            break;
         case "RepositoryCopy":
-            return get_string(o, "publication") + "," + get_string(o, "repository", "");
-        default:
-            return null;
+            add_unique_key(keys, type, o, "accessUrl");
+            add_unique_key(keys, type, o, "repository", "publication");
+
+            if (keys.isEmpty()) {
+                throw new RuntimeException("Cannot generate unique key for " + o);
+            }
+            break;
         }
+
+
+
+        return keys;
     }
 
     private JsonObject replace(JsonObject o, String key, JsonValue value) {
@@ -191,37 +272,36 @@ public class PassRemediator {
         return result.build();
     }
 
-    private void fix_duplicates(Map<String, List<Relation>> target_relations, List<JsonObject> dupes) {
-        System.err.println(dupes);
+    private void fix_duplicates(Map<String, List<Relation>> target_relations, List<String> dupes) {
+        String prime = dupes.get(0);
+        JsonValue prime_value = Json.createValue(prime);
 
-        JsonObject prime = dupes.remove(0);
-        String prime_id = get_string(prime, "id");
-        JsonValue prime_id_value = Json.createValue(prime_id);
-
-        System.err.println("Prime: " + prime_id);
+        System.err.println("Prime: " + prime);
 
         // Switch all relations which target a duplicate to the prime
-        dupes.forEach(dup -> {
-            String dup_id = get_string(dup, "id");
-            List<Relation> rels = target_relations.get(dup_id);
+        for (int i = 1; i < dupes.size(); i++) {
+            String dup = dupes.get(i);
 
-            System.err.println("Handling duplicate: " + dup_id);
+            List<Relation> rels = target_relations.get(dup);
+
+            System.err.println("  Handling duplicate: " + dup);
 
             if (rels != null) {
                 rels.forEach(r -> {
-                    System.err.println("Updating relationship " + r.source + " " + r.name + " " + r.target);
+                    System.err.println("  Updating relationship " + r.source + " " + r.name + " " + r.target);
 
                     JsonObject source = objects.get(r.source);
 
-                    // If source is null, then source was a removed duplicate and we don't need to do anything
+                    // If source is null, then source was a removed duplicate and we don't need to
+                    // do anything
                     if (source != null) {
-                        objects.put(r.source, replace(source, r.name, prime_id_value));
+                        objects.put(r.source, replace(source, r.name, prime_value));
                     }
                 });
             }
 
-            objects.remove(dup_id);
-        });
+            objects.remove(dup);
+        }
     };
 
     private static class Relation {
@@ -237,6 +317,11 @@ public class PassRemediator {
 
         public Relation(String source, String name, JsonValue target) {
             this(source, name, JsonString.class.cast(target).getString());
+        }
+
+        @Override
+        public String toString() {
+            return this.source + " " + this.name + " " + target;
         }
     }
 
@@ -262,62 +347,76 @@ public class PassRemediator {
         return result;
     }
 
-    public void fixDuplicates() {
-        // Unique key -> list of duplicate objects
-        Map<String, List<JsonObject>> dupe_map = new HashMap<>();
+    private void fix_duplicates() {
+        // Unique key -> list of objects with that key
+        Map<String, List<JsonObject>> key_map = new HashMap<>();
 
         objects.values().forEach(o -> {
-            String key = get_unique_key(o);
-
-            if (key != null) {
-                List<JsonObject> dupes = dupe_map.get(key);
+            get_unique_keys(o).forEach(key -> {
+                List<JsonObject> dupes = key_map.get(key);
 
                 if (dupes == null) {
                     dupes = new ArrayList<>();
-                    dupe_map.put(key, dupes);
+                    key_map.put(key, dupes);
                 }
 
                 dupes.add(o);
-            }
-        });
-
-        // Remove objects without duplicates from dupe_map
-        List<String> toremove = new ArrayList<>();
-        dupe_map.forEach((key, dupes) -> {
-            if (dupes.size() == 1) {
-                toremove.add(key);
-            }
-        });
-
-        toremove.forEach(dupe_map::remove);
-
-        System.err.println("Number of objects: " + objects.size());
-        System.err.println("Number of duplicate sets: " + dupe_map.size());
-
-        // Target object id -> list of relationships with this object as a target
-        Map<String, List<Relation>> target_relations = new HashMap<>();
-
-        objects.values().forEach(o -> {
-            get_relations(o).forEach(r -> {
-                List<Relation> rels = target_relations.get(r.target);
-
-                if (rels == null) {
-                    rels = new ArrayList<>();
-                    target_relations.put(r.target, rels);
-                }
-
-                rels.add(r);
             });
         });
 
-        dupe_map.values().forEach(dupes -> {
+        // Remove entries without duplicates
+        key_map.entrySet().removeIf((e) -> e.getValue().size() == 1);
+
+        // Coalesce duplicate lists that share keys
+        List<List<String>> duplicates_list = new ArrayList<>();
+
+        Set<String> keys = key_map.keySet();
+
+        while (!keys.isEmpty()) {
+            String key = keys.iterator().next();
+
+            Set<String> dupes = new HashSet<String>();
+
+            // System.err.println(key);
+
+            // Check keys of duplicate objects for other duplicates from other keys
+            key_map.get(key).forEach(o -> {
+                get_unique_keys(o).forEach(k -> {
+                    List<JsonObject> key_dupes = key_map.get(k);
+
+                    if (key_dupes != null) {
+                        key_dupes.stream().map(ko -> get_string(ko, "id")).forEach(dupes::add);
+                        keys.remove(k);
+                    }
+                });
+            });
+
+            duplicates_list.add(new ArrayList<>(dupes));
+        }
+
+        System.err.println("Number of objects: " + objects.size());
+        System.err.println("Number of duplicate sets: " + duplicates_list.size());
+
+        // type -> count
+        Map<String, Integer> dupe_counts = new HashMap<>();
+
+        duplicates_list.forEach(dupes -> {
+            String type = get_string(objects.get(dupes.get(0)), "type");
+            dupe_counts.compute(type, (t, c) -> (c == null ? 0 : c) + dupes.size());
+        });
+
+        dupe_counts.forEach((t, c) -> {
+            System.err.println("Dupe count for " + t + ": " + c);
+        });
+
+        duplicates_list.forEach(dupes -> {
             fix_duplicates(target_relations, dupes);
         });
 
         System.err.println("Number of objects after removing duplicates: " + objects.size());
     }
 
-    public void removeUselessObjects() {
+    private void remove_useless_objects() {
         List<JsonObject> toremove = new ArrayList<>();
 
         get_objects_of_type("Grant").forEach(o -> {
@@ -339,10 +438,32 @@ public class PassRemediator {
         });
 
         toremove.forEach(o -> {
-            objects.remove(get_string(o, "id"));
+            String id = get_string(o, "id");
+
+            if (target_relations.containsKey(id)) {
+                throw new RuntimeException("Useless object is target of relation: " + target_relations.get(id));
+            }
+
+            System.err.println("Removing " + o);
+
+            objects.remove(id);
         });
 
         System.err.println("Removed " + toremove.size());
+    }
+
+    public void run() {
+        System.err.println("Remove not needed objects");
+        remove_useless_objects();
+
+        System.err.println("Fixing User locator ids");
+        fix_locator_ids();
+
+        System.err.println("Normalizing Grant award numbers");
+        normalize_award_numbers();
+
+        System.err.println("Fixing duplicates");
+        fix_duplicates();
     }
 
     public void writePackage(Path output_dir) throws IOException {
