@@ -8,7 +8,10 @@ import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Stream;
+
 import javax.json.Json;
 import javax.json.JsonObject;
 
@@ -16,7 +19,8 @@ import javax.json.JsonObject;
  * Utilities for managing a migration package.
  */
 public class PackageUtil {
-    private PackageUtil() {}
+    private PackageUtil() {
+    }
 
     public static void initPackage(Path packageDir) throws IOException {
         Files.createDirectories(getFilesDir(packageDir));
@@ -92,11 +96,12 @@ public class PackageUtil {
                 throw new RuntimeException("Cannot find binary for File: " + o);
             }
         }
+
     }
 
     /**
      * Run consistency checks on the package such as making sure. That File objects
-     * match binaries.
+     * match binaries and all relations
      *
      * @param packageDir
      * @throws IOException
@@ -109,6 +114,24 @@ public class PackageUtil {
         if (!Files.isDirectory(getFilesDir(packageDir))) {
             throw new IOException("No files directory");
         }
+
+        Map<String, JsonObject> objects = new HashMap<>();
+
+        readObjects(packageDir).forEach(o -> {
+            objects.put(o.getString("id"), o);
+        });
+
+        PassRemediator.getTargetRelations(readObjects(packageDir)).values().forEach(rels -> {
+            rels.forEach(rel -> {
+                if (!objects.containsKey(rel.source)) {
+                    throw new RuntimeException("Cannot find source of relation: " + rel);
+                }
+
+                if (!objects.containsKey(rel.target)) {
+                    throw new RuntimeException("Cannot find target of relation: " + rel);
+                }
+            });
+        });
 
         readObjects(packageDir).forEach(o -> check(packageDir, o));
     }
