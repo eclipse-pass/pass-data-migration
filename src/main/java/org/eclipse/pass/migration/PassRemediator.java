@@ -25,6 +25,14 @@ import org.eclipse.pass.support.client.model.PassEntity;
 import org.eclipse.pass.support.client.model.Source;
 
 public class PassRemediator {
+    private static final String FCREPO_ID_MARKER = "/rest";
+
+    private static final Set<String> non_relation_list_properties = new HashSet<>();
+
+    static {
+        non_relation_list_properties.addAll(List.of("issns", "externalIds", "locatorIds", "roles", "schemas"));
+    }
+
     private Path input_package;
 
     // Identifier -> PASS object
@@ -64,25 +72,30 @@ public class PassRemediator {
     public PassRemediator(Path input_package) throws IOException {
         this.objects = new HashMap<>();
         this.input_package = input_package;
-        this.target_relations = new HashMap<>();
 
-        update(PackageUtil.readObjects(input_package));
+        update(PackageUtil.readObjects(input_package).map(this::fix_field_names).map(this::normalize_identifiers));
 
-        // Needed for relations code to run
-        fix_field_names();
+        this.target_relations = getTargetRelations(objects.values().stream());
+    }
 
-        objects.values().forEach(o -> {
+    // Target id -> list of relations with that target
+    public static Map<String, List<Relation>> getTargetRelations(Stream<JsonObject> objects) {
+        Map<String, List<Relation>> result = new HashMap<>();
+
+        objects.forEach(o -> {
             get_relations(o).forEach(r -> {
-                List<Relation> rels = target_relations.get(r.target);
+                List<Relation> rels = result.get(r.target);
 
                 if (rels == null) {
                     rels = new ArrayList<>();
-                    target_relations.put(r.target, rels);
+                    result.put(r.target, rels);
                 }
 
                 rels.add(r);
             });
         });
+
+        return result;
     }
 
     private Stream<JsonObject> get_objects_of_type(String type) {
@@ -121,22 +134,57 @@ public class PassRemediator {
         update(updated_users.stream());
     }
 
-    private void fix_field_names() {
-        List<JsonObject> updated = new ArrayList<>();
-
+    private JsonObject fix_field_names(JsonObject o) {
         // Publication.abstract -> Publication.publicationAbstract
-        get_objects_of_type("Publication").forEach(o -> {
+        if (o.getString("type").equals("Publication")) {
             if (o.containsKey("abstract")) {
                 JsonObjectBuilder builder = Json.createObjectBuilder(o);
 
                 builder.add("publicationAbstract", o.get("abstract"));
                 builder.remove("abstract");
 
-                updated.add(builder.build());
+                return builder.build();
+            }
+        }
+
+        return o;
+    }
+
+    private String normalize_identifier(String id) {
+        int i = id.indexOf(FCREPO_ID_MARKER);
+
+        return i == -1 ? id : id.substring(i + FCREPO_ID_MARKER.length());
+    }
+
+    // Strip out the hostname portion of all identifiers
+    private JsonObject normalize_identifiers(JsonObject o) {
+        JsonObjectBuilder builder = Json.createObjectBuilder(o);
+
+        builder.add("id", normalize_identifier(get_string(o, "id")));
+
+        // Update all the targets in relations
+
+        Class<?> object_type = JsonUtil.getPassJavaType(get_string(o, "type"));
+
+        o.forEach((k, v) -> {
+            if (!k.equals("id") && !k.equals("type") && !k.equals("context")) {
+                Class<?> klass = JsonUtil.getPropertyJavaType(object_type, k);
+
+                if (PassEntity.class.isAssignableFrom(klass)) {
+                    builder.add(k, normalize_identifier(JsonString.class.cast(v).getString()));
+                } else if (klass == List.class && !non_relation_list_properties.contains(k)) {
+                    JsonArrayBuilder ab = Json.createArrayBuilder();
+
+                    v.asJsonArray().stream().forEach(v2 -> {
+                        ab.add(normalize_identifier(JsonString.class.cast(v2).getString()));
+                    });
+
+                    builder.add(k, ab.build());
+                }
             }
         });
 
-        update(updated.stream());
+        return builder.build();
     }
 
     private void normalize_award_numbers() {
@@ -162,7 +210,11 @@ public class PassRemediator {
 
         for (String prop : props) {
             if (o.containsKey(prop)) {
-                key.append("," + get_string(o, prop));
+                String s = get_string(o, prop);
+
+                if (!s.isEmpty()) {
+                    key.append("," + s);
+                }
             }
         }
 
@@ -251,22 +303,30 @@ public class PassRemediator {
             break;
         }
 
-
-
         return keys;
     }
 
-    private JsonObject replace(JsonObject o, String key, JsonValue value) {
+    private JsonObject replace(JsonObject o, String key, String old_value, String new_value) {
         JsonObjectBuilder result = Json.createObjectBuilder(o);
 
         if (o.containsKey(key)) {
-            JsonValue old_value = o.get(key);
+            JsonValue jv = o.get(key);
 
-            if (old_value.getValueType() == ValueType.ARRAY) {
-                value = Json.createArrayBuilder(old_value.asJsonArray()).add(value).build();
+            if (jv.getValueType() == ValueType.ARRAY) {
+                JsonArrayBuilder ab = Json.createArrayBuilder();
+
+                jv.asJsonArray().forEach(v -> {
+                    if (JsonString.class.cast(v).getString().equals(old_value)) {
+                        ab.add(new_value);
+                    } else {
+                        ab.add(v);
+                    }
+                });
+
+                result.add(key, ab.build());
+            } else {
+                result.add(key, new_value);
             }
-
-            result.add(key, value);
         }
 
         return result.build();
@@ -274,7 +334,6 @@ public class PassRemediator {
 
     private void fix_duplicates(Map<String, List<Relation>> target_relations, List<String> dupes) {
         String prime = dupes.get(0);
-        JsonValue prime_value = Json.createValue(prime);
 
         System.err.println("Prime: " + prime);
 
@@ -295,7 +354,9 @@ public class PassRemediator {
                     // If source is null, then source was a removed duplicate and we don't need to
                     // do anything
                     if (source != null) {
-                        objects.put(r.source, replace(source, r.name, prime_value));
+                        objects.put(r.source, replace(source, r.name, r.target, prime));
+
+                        // System.err.println("*** " + source + " ****  " + objects.get(r.source));
                     }
                 });
             }
@@ -304,28 +365,7 @@ public class PassRemediator {
         }
     };
 
-    private static class Relation {
-        private final String name;
-        private final String source;
-        private final String target;
-
-        public Relation(String source, String name, String target) {
-            this.name = name;
-            this.source = source;
-            this.target = target;
-        }
-
-        public Relation(String source, String name, JsonValue target) {
-            this(source, name, JsonString.class.cast(target).getString());
-        }
-
-        @Override
-        public String toString() {
-            return this.source + " " + this.name + " " + target;
-        }
-    }
-
-    private List<Relation> get_relations(JsonObject o) {
+    private static List<Relation> get_relations(JsonObject o) {
         List<Relation> result = new ArrayList<>();
         String source = get_string(o, "id");
         Class<?> object_type = JsonUtil.getPassJavaType(get_string(o, "type"));
@@ -336,7 +376,7 @@ public class PassRemediator {
 
                 if (PassEntity.class.isAssignableFrom(klass)) {
                     result.add(new Relation(source, k, v));
-                } else if (klass == List.class) {
+                } else if (klass == List.class && !non_relation_list_properties.contains(k)) {
                     v.asJsonArray().stream().forEach(v2 -> {
                         result.add(new Relation(source, k, v2));
                     });
