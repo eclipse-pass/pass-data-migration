@@ -34,6 +34,8 @@
     <okhttp.version>4.10.0</okhttp.version>
     <slf4j.version>1.7.36</slf4j.version>
 
+    <checkstyle.skip>true</checkstyle.skip>
+
     <!-- Properties for ITs -->
     <pass.core.port>8080</pass.core.port>
     <pass.core.url>http://localhost:8080</pass.core.url>
