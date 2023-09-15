@@ -15,3 +15,4 @@
 {"type":"Funder","name":"INSTITUTE OF COWS","id":"funder1dup","context":"","localKey":"johnshopkins.edu:funder:blah","policy":"policy1"}
 {"type":"Funder","name":"SQUIRRELS FOR MORE NUTS","id":"funder2","context":"","localKey":"johnshopkins.edu:funder:sq","policy":"policy1"}
 {"policyUrl":"https://www.cdc.gov/maso/Policy/moo.pdf","repositories":["rep1"],"type":"Policy","description":"blah","id":"policy1","title":"title","context":""}
+{"fileRole":"manuscript","type":"File","name":"test.txt","description":"Manuscript","id":"file1","mimeType":"pdf","uri":"/test.txt","context":"https://oa-pass.github.io/pass-data-model/src/main/resources/context-3.4.jsonld","submission":"sub1"}

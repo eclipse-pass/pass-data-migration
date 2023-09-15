@@ -46,13 +46,13 @@ public class MigrationIT {
         assertEquals(2, objects.values().stream().filter(o -> o.getString("type").equals("Grant")).count());
         assertEquals(3, objects.values().stream().filter(o -> o.getString("type").equals("Funder")).count());
 
-        assertEquals(17, objects.size());
+        assertEquals(18, objects.size());
 
         pr.run();
 
         objects = pr.getObjects();
 
-        assertEquals(13, objects.size());
+        assertEquals(14, objects.size());
 
         // Should point to same submission now
         dep1 = objects.get("deposit1");
