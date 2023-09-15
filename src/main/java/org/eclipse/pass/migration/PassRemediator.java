@@ -510,4 +510,8 @@ public class PassRemediator {
         FileUtils.copyDirectory(input_package.toFile(), output_dir.toFile(), true);
         PackageUtil.writeObjects(output_dir, objects.values().stream());
     }
+
+    Map<String, JsonObject> getObjects() {
+        return objects;
+    }
 }
