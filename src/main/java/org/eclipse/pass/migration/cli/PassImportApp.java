@@ -17,6 +17,7 @@ import org.eclipse.pass.migration.JsonUtil;
 import org.eclipse.pass.migration.PackageUtil;
 import org.eclipse.pass.support.client.ModelUtil;
 import org.eclipse.pass.support.client.PassClient;
+import org.eclipse.pass.support.client.model.File;
 import org.eclipse.pass.support.client.model.Grant;
 import org.eclipse.pass.support.client.model.PassEntity;
 import org.eclipse.pass.support.client.model.PmcParticipation;
@@ -32,8 +33,7 @@ public class PassImportApp {
     // Create a PassEntity and set the id. It must have an appropriate constructor.
     private static PassEntity create_pass_entity(String id, String type) {
         try {
-            return (PassEntity) JsonUtil.getPassJavaType(type)
-                    .getConstructor(String.class).newInstance(id);
+            return (PassEntity) JsonUtil.getPassJavaType(type).getConstructor(String.class).newInstance(id);
         } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException
                 | NoSuchMethodException | SecurityException e) {
             throw new RuntimeException("Failed to create: " + type, e);
@@ -50,7 +50,6 @@ public class PassImportApp {
             throw new RuntimeException("Failed to create: " + type, e);
         }
     }
-
 
     private static String resolve_ref(Map<String, PassEntity> entities, JsonValue v) {
         return resolve_ref(entities, JsonString.class.cast(v).getString());
@@ -82,6 +81,8 @@ public class PassImportApp {
             } else if (key.equals("grants")) {
                 value = json_value.asJsonArray().stream().map(v -> new Grant(resolve_ref(entities, v))).toList();
             } else if (key.equals("coPis")) {
+                value = json_value.asJsonArray().stream().map(v -> new User(resolve_ref(entities, v))).toList();
+            } else if (key.equals("preparers")) {
                 value = json_value.asJsonArray().stream().map(v -> new User(resolve_ref(entities, v))).toList();
             } else if (key.equals("effectivePolicies")) {
                 value = json_value.asJsonArray().stream().map(v -> new Policy(resolve_ref(entities, v))).toList();
@@ -162,13 +163,16 @@ public class PassImportApp {
                 try {
                     set_value(result, k, v, entities);
                 } catch (Exception e) {
-                    System.err.println("Error: Failed to set value " + k + " from " + o);
-                    System.err.println(e.getMessage());
+                    throw new RuntimeException("Error: Failed to set value " + k + " from " + o, e);
                 }
             }
         });
 
         return result;
+    }
+
+    private static class Counter {
+        int value = 0;
     }
 
     public static void main(String[] args) throws IOException {
@@ -186,24 +190,43 @@ public class PassImportApp {
 
         List<String> type_order = List.of("User", "Repository", "Journal", "Publisher", "Repository", "Policy",
                 "Funder", "Grant", "Publication", "Submission", "RepositoryCopy", "Deposit", "SubmissionEvent", "File");
+        Counter total = new Counter();
 
         for (String type : type_order) {
             System.err.println("Importing " + type);
 
+            Counter count = new Counter();
+
             PackageUtil.readObjects(input_dir).filter(o -> o.getString("type").equals(type)).forEach(o -> {
                 PassEntity entity = null;
+
+                count.value++;
+
                 try {
                     entity = as_pass_entity(o, entities);
                     entities.put(entity.getId(), entity);
+
+                    if (type.equals("File")) {
+                        File f = File.class.cast(entity);
+                        f.setUri(client.uploadBinary(f.getName(),
+                                PackageUtil.readFileFully(input_dir, f.getUri().getPath())));
+                    }
+
                     client.createObject(entity);
                 } catch (Exception e) {
                     System.err.println("Error: Failed on json " + o);
                     if (entity != null) {
                         System.err.println("Entity: " + entity);
                     }
-                    System.out.println("Exception: " + e.getMessage());
+                    System.err.println("Exception: " + e.getMessage());
+                    System.exit(1);
                 }
             });
+
+            total.value += count.value;
+            System.err.println("Number imported: " + count.value);
         }
+
+        System.err.println("Total imported: " + total.value);
     }
 }

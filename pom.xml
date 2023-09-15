@@ -33,6 +33,12 @@
     <javax.jason.version>1.1.4</javax.jason.version>
     <okhttp.version>4.10.0</okhttp.version>
     <slf4j.version>1.7.36</slf4j.version>
+
+    <!-- Properties for ITs -->
+    <pass.core.port>8080</pass.core.port>
+    <pass.core.url>http://localhost:8080</pass.core.url>
+    <pass.core.user>backend</pass.core.user>
+    <pass.core.password>backend</pass.core.password>
   </properties>
 
   <repositories>
@@ -168,6 +174,73 @@
             </configuration>
           </execution>          
         </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>io.fabric8</groupId>
+        <artifactId>docker-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>start</id>
+            <phase>pre-integration-test</phase>
+            <goals>
+              <goal>start</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>stop</id>
+            <phase>post-integration-test</phase>
+            <goals>
+              <goal>stop</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <images>
+            <image>
+              <name>ghcr.io/eclipse-pass/pass-core-main:%v</name>
+              <run>
+		<env>
+                  <PASS_CORE_BASE_URL>${pass.core.url}</PASS_CORE_BASE_URL>
+                  <PASS_CORE_BACKEND_USER>${pass.core.user}</PASS_CORE_BACKEND_USER>
+                  <PASS_CORE_BACKEND_PASSWORD>${pass.core.password}</PASS_CORE_BACKEND_PASSWORD>
+		</env>
+                <wait>
+                  <http>
+                    <url>
+                      ${pass.core.url}/data/grant
+                    </url>
+		    <status>401</status>
+                  </http>
+                  <time>60000</time>
+                </wait>
+                <ports>
+                  <port>${pass.core.port}:${pass.core.port}</port>
+                </ports>
+              </run>
+            </image>
+          </images>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+          </execution>
+        </executions>
+	<configuration>
+          <systemPropertyVariables>
+            <pass.core.url>${pass.core.url}</pass.core.url>
+            <pass.core.user>${pass.core.user}</pass.core.user>
+            <pass.core.password>${pass.core.password}</pass.core.password> 
+          </systemPropertyVariables>
+        </configuration>
       </plugin>
     </plugins>
   </build>

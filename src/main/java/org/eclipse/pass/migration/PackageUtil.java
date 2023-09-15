@@ -68,6 +68,16 @@ public class PackageUtil {
         }
     }
 
+    public static byte[] readFileFully(Path packageDir, String path) throws IOException {
+        if (path.startsWith("/")) {
+            path = path.substring(1);
+        }
+
+        Path full_path = getFilesDir(packageDir).resolve(path);
+
+        return Files.readAllBytes(full_path);
+    }
+
     private static void check(Path packageDir, JsonObject o) {
         o.keySet().forEach(k -> {
             if (k.startsWith("@")) {
