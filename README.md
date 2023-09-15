@@ -11,6 +11,12 @@ A zip consisting of a file objects.ndjson and a directory hierarchy starting at 
 
 The objects.ndjson file will contain PASS objects in newline delimited JSON format. Each line will be a PASS object in JSON-LD format with the following transformations. Each property starting with “@” will have the “@” stripped. The “journalName_suggest” field is removed. (This is to match the design of the original data migration tool and seems reasonable in any case.)
 
+# Build
+
+```
+mvn clean package
+```
+
 # Export
 
 The export tool retrieves all of the PASS objects from an Elasticsearch index. Each File object also has the binary retrieved which is associated with it in Fedora.
