@@ -3,6 +3,7 @@ package org.eclipse.pass.migration;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -333,6 +334,9 @@ public class PassRemediator {
     }
 
     private void fix_duplicates(Map<String, List<Relation>> target_relations, List<String> dupes) {
+        // Keep the objects with the longest string representation which should be the one with the most information
+        Collections.sort(dupes, (id1, id2) -> objects.get(id2).toString().length() - objects.get(id1).toString().length());
+
         String prime = dupes.get(0);
 
         System.err.println("Prime: " + prime);
