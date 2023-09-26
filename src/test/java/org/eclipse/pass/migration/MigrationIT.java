@@ -6,12 +6,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Map;
 
 import javax.json.JsonObject;
 
 import org.eclipse.pass.migration.cli.PassImportApp;
+import org.eclipse.pass.support.client.PassClient;
+import org.eclipse.pass.support.client.PassClientSelector;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -45,6 +49,7 @@ public class MigrationIT {
         assertEquals(2, objects.values().stream().filter(o -> o.getString("type").equals("Submission")).count());
         assertEquals(2, objects.values().stream().filter(o -> o.getString("type").equals("Grant")).count());
         assertEquals(3, objects.values().stream().filter(o -> o.getString("type").equals("Funder")).count());
+        assertEquals(1, objects.values().stream().filter(o -> o.getString("type").equals("File")).count());
 
         assertEquals(18, objects.size());
 
@@ -64,6 +69,7 @@ public class MigrationIT {
         assertEquals(1, objects.values().stream().filter(o -> o.getString("type").equals("Submission")).count());
         assertEquals(1, objects.values().stream().filter(o -> o.getString("type").equals("Grant")).count());
         assertEquals(2, objects.values().stream().filter(o -> o.getString("type").equals("Funder")).count());
+        assertEquals(1, objects.values().stream().filter(o -> o.getString("type").equals("File")).count());
 
         pr.writePackage(fixed_package_dir.toPath());
         PackageUtil.check(fixed_package_dir.toPath());
@@ -71,5 +77,21 @@ public class MigrationIT {
         // Do the import into PASS
 
         PassImportApp.main(new String[] { fixed_package_dir.toString() });
+
+
+
+        PassClient client = PassClient.newInstance();
+
+        PassClientSelector<org.eclipse.pass.support.client.model.File> sel = new PassClientSelector<>(
+                org.eclipse.pass.support.client.model.File.class);
+
+        List<org.eclipse.pass.support.client.model.File> files = client.streamObjects(sel).toList();
+
+        assertEquals(1, files.size());
+
+        // Make sure can download file
+
+        try (InputStream is = client.downloadFile(files.get(0))) {
+        }
     }
 }

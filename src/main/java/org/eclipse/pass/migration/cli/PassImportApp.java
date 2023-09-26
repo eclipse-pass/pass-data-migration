@@ -208,8 +208,19 @@ public class PassImportApp {
 
                     if (type.equals("File")) {
                         File f = File.class.cast(entity);
-                        f.setUri(client.uploadBinary(f.getName(),
-                                PackageUtil.readFileFully(input_dir, f.getUri().getPath())));
+                        URI uri = client.uploadBinary(f.getName(),
+                                PackageUtil.readFileFully(input_dir, f.getUri().getPath()));
+
+                        String path = uri.getRawPath();
+
+                        int i = path.indexOf("/file/");
+
+                        if (i == -1) {
+                            throw new RuntimeException("Malformed file uri: " + f);
+                        }
+
+
+                        f.setUri(new URI(path.substring(i)));
                     }
 
                     client.createObject(entity);
