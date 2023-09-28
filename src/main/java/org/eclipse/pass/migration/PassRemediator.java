@@ -1,6 +1,7 @@
 package org.eclipse.pass.migration;
 
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -206,6 +207,26 @@ public class PassRemediator {
         update(updated_grants.stream());
     }
 
+    // Strip host schema uri. Must start with /metadata-schemas/
+    private void normalize_repository_schemas() {
+        List<JsonObject> updated_reps = new ArrayList<>();
+
+        get_objects_of_type("Repository").forEach(o -> {
+            List<String> schemas = get_string_array(o, "schemas").stream().map(uri -> URI.create(uri).getPath())
+                    .toList();
+
+            schemas.forEach(uri -> {
+                if (!uri.startsWith("/metadata-schemas/")) {
+                    throw new RuntimeException("Unexpected repository schema: " + uri);
+                }
+            });
+
+            updated_reps.add(Json.createObjectBuilder(o).add("schemas", Json.createArrayBuilder(schemas)).build());
+        });
+
+        update(updated_reps.stream());
+    }
+
     private void add_unique_key(List<String> keys, String type, JsonObject o, String... props) {
         StringBuilder key = new StringBuilder();
 
@@ -334,8 +355,10 @@ public class PassRemediator {
     }
 
     private void fix_duplicates(Map<String, List<Relation>> target_relations, List<String> dupes) {
-        // Keep the objects with the longest string representation which should be the one with the most information
-        Collections.sort(dupes, (id1, id2) -> objects.get(id2).toString().length() - objects.get(id1).toString().length());
+        // Keep the objects with the longest string representation which should be the
+        // one with the most information
+        Collections.sort(dupes,
+                (id1, id2) -> objects.get(id2).toString().length() - objects.get(id1).toString().length());
 
         String prime = dupes.get(0);
 
@@ -360,7 +383,7 @@ public class PassRemediator {
                     if (source != null) {
                         objects.put(r.source, replace(source, r.name, r.target, prime));
 
-                        // System.err.println("*** " + source + " ****  " + objects.get(r.source));
+                        // System.err.println("*** " + source + " **** " + objects.get(r.source));
                     }
                 });
             }
@@ -505,6 +528,9 @@ public class PassRemediator {
 
         System.err.println("Normalizing Grant award numbers");
         normalize_award_numbers();
+
+        System.err.println("Normalizing repository schemas");
+        normalize_repository_schemas();
 
         System.err.println("Fixing duplicates");
         fix_duplicates();

@@ -69,7 +69,9 @@ public class MigrationIT {
         assertEquals(1, objects.values().stream().filter(o -> o.getString("type").equals("Submission")).count());
         assertEquals(1, objects.values().stream().filter(o -> o.getString("type").equals("Grant")).count());
         assertEquals(2, objects.values().stream().filter(o -> o.getString("type").equals("Funder")).count());
+
         assertEquals(1, objects.values().stream().filter(o -> o.getString("type").equals("File")).count());
+        assertEquals(1, objects.values().stream().filter(o -> o.getString("type").equals("Repository")).count());
 
         pr.writePackage(fixed_package_dir.toPath());
         PackageUtil.check(fixed_package_dir.toPath());
