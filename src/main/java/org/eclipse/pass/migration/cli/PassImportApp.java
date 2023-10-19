@@ -188,7 +188,7 @@ public class PassImportApp {
         // Map from the original entity id to the entity
         Map<String, PassEntity> entities = new HashMap<>();
 
-        List<String> type_order = List.of("User", "Repository", "Journal", "Publisher", "Repository", "Policy",
+        List<String> type_order = List.of("User", "Repository", "Journal", "Publisher", "Policy",
                 "Funder", "Grant", "Publication", "Submission", "RepositoryCopy", "Deposit", "SubmissionEvent", "File");
         Counter total = new Counter();
 
