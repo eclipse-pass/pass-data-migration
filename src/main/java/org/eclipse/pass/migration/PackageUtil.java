@@ -116,6 +116,8 @@ public class PackageUtil {
      * @param packageDir
      * @throws IOException
      */
+
+    // TODO These checks will only work after remediation due to the publicationAbstract change and the id normalization
     public static void check(Path packageDir) throws IOException {
         if (!Files.isRegularFile(getObjectsFile(packageDir))) {
             throw new IOException("No objects file");
